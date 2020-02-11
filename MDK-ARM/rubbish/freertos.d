@@ -75,3 +75,4 @@ rubbish\freertos.o: ../Inc/stm32f769i_discovery_sdram.h
 rubbish\freertos.o: ../Inc/stm32f769i_discovery.h
 rubbish\freertos.o: ../Inc/../Fonts/fonts.h
 rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

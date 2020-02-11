@@ -28,6 +28,7 @@
 #include "cmsis_os.h"
 #include "gui.h"
 #include "stm32f769i_discovery_lcd.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -184,9 +185,39 @@ void StartTouchTask(void const * argument)
   	if (event.status == osEventMessage)
 		{
 			//HAL_GPIO_WritePin(GPIOJ,GPIO_PIN_13,GPIO_PIN_SET);
-			Touchscreen_Handle_NewTouch();
+			uint16_t x = -1, y = -1;
+			get_touch_pos(&x, &y);
+			print_touch_pos(x, y);
+			
+			uint8_t lcd_string[60] = "";
+			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+      BSP_LCD_SetFont(&Font12);
+			if(x > 0 && x < 115 && y > 0 && y < 115)
+			{
+				//left top button
+				sprintf((char*)lcd_string, "left top button");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+			}
+			else if(x > 700 && y < 115)
+			{
+				//right top button
+				sprintf((char*)lcd_string, "right top button");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+			}
+			else if(x < 115 && y > 320)
+			{
+				//left bottom button
+				sprintf((char*)lcd_string, "left bottom button");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+			}
+			else if(x > 700 && y > 320)
+			{
+				//right bottom button
+				sprintf((char*)lcd_string, "right bottom button");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+			}
 		}
-    osDelay(10);
+    osDelay(50);
   }
 }
 /* USER CODE END Application */

@@ -23,3 +23,5 @@ void DrawNumOnContainer(uint8_t num, uint8_t pos);
 uint32_t ReadImage(uint32_t *ptr, const char* fname);
 void DrawPercents(void);
 void PrintFullness(uint8_t container,uint8_t perc);
+void get_touch_pos(uint16_t *x, uint16_t *y);
+void print_touch_pos(uint16_t x, uint16_t y);

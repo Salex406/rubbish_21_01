@@ -536,3 +536,24 @@ void DrawPercents()
 				osDelay(5);	
 				DMA2D_DrawImage((uint32_t)screens[15].location, 608, 178, 23, 26);
 }
+
+void get_touch_pos(uint16_t *x, uint16_t *y)
+{
+	TS_StateTypeDef  TS_State = {0};
+	uint32_t ts_status = TS_OK;
+	ts_status = BSP_TS_GetState(&TS_State);
+	*x = TS_State.touchX[0];
+	*y = TS_State.touchY[0];
+}
+
+void print_touch_pos(uint16_t x, uint16_t y)
+{
+			uint8_t lcd_string[60] = "";
+			sprintf((char*)lcd_string, "x1 = %d, y1 = %d",
+              x,
+              y);
+			
+			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+      BSP_LCD_SetFont(&Font12);
+      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE);
+}
