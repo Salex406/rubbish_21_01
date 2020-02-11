@@ -1,0 +1,12 @@
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1/port.c
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+rubbish\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
+rubbish\port.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+rubbish\port.o: ../Inc/FreeRTOSConfig.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1/portmacro.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+rubbish\port.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h

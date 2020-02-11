@@ -1,0 +1,38 @@
+#include "gui.h"
+#include "stm32f7xx_hal.h"
+
+extern DMA2D_HandleTypeDef hdma2d;
+extern LTDC_HandleTypeDef hltdc;
+
+void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32_t color)
+{
+  if(x1>x2) swap(x1,x2);
+  if(y1>y2) swap(y1,y2);
+  uint32_t addr = 0;
+  addr = FRAMEBUFER_ADDR + 4*(y1*hltdc.LayerCfg[0].ImageWidth + x1);
+  hdma2d.Init.Mode = DMA2D_R2M;
+  hdma2d.Init.OutputOffset = hltdc.LayerCfg[0].ImageWidth-(x2-x1);
+  if(HAL_DMA2D_Init(&hdma2d) == HAL_OK)
+  {
+    if (HAL_DMA2D_Start(&hdma2d, color, addr, x2-x1, y2-y1) == HAL_OK)
+    {
+      HAL_DMA2D_PollForTransfer(&hdma2d, 10);
+    }
+  }
+}
+
+void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t progress,uint8_t type,uint32_t color)
+{
+	if(type==PROGRESSBAR_HORISONTAL)
+	{
+		uint16_t filledLength = length*progress/100;
+		TFT_FillRectangle(x, y, x + filledLength, y + width, color);
+		TFT_FillRectangle(x + filledLength, y, x + length, y + width, 0xFFFFFFFF); 
+	}
+	else
+	{
+		uint16_t filledLength = length*progress/100;
+		TFT_FillRectangle(x, y, x + width, y - filledLength, color);
+		TFT_FillRectangle(x, y + length, x + width, y - filledLength, 0xFFFFFFFF); 
+	}
+}
