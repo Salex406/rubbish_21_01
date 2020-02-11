@@ -26,7 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cmsis_os.h"
-extern osMessageQId USART_Queue;
+extern osMessageQId TOUCH_Queue;
 /* USER CODE END Includes */
   
 /* Private typedef -----------------------------------------------------------*/
@@ -185,7 +185,7 @@ void EXTI15_10_IRQHandler(void)
 
   /* USER CODE END EXTI15_10_IRQn 0 */
 	uint8_t msg = 0;
-	osMessagePut(USART_Queue, msg, 100);
+	osMessagePut(TOUCH_Queue, msg, 100);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
 	
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */

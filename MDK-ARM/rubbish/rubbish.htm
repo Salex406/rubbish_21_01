@@ -3,7 +3,7 @@
 <title>Static Call Graph - [rubbish\rubbish.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image rubbish\rubbish.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Sat Jan 25 15:04:12 2020
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Tue Feb 11 13:26:52 2020
 <BR><P>
 <H3>Maximum Stack Usage =       4672 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -115,10 +115,10 @@ Function Pointers
  <LI><a href="#[68]">SPI5_IRQHandler</a> from startup_stm32f769xx.o(.text) referenced from startup_stm32f769xx.o(RESET)
  <LI><a href="#[69]">SPI6_IRQHandler</a> from startup_stm32f769xx.o(.text) referenced from startup_stm32f769xx.o(RESET)
  <LI><a href="#[10]">SVC_Handler</a> from port.o(.emb_text) referenced from startup_stm32f769xx.o(RESET)
- <LI><a href="#[87]">StartBlinkTask</a> from main.o(i.StartBlinkTask) referenced from main.o(.constdata)
- <LI><a href="#[86]">StartDefaultTask</a> from main.o(i.StartDefaultTask) referenced from main.o(.constdata)
- <LI><a href="#[88]">StartDrawTask</a> from main.o(i.StartDrawTask) referenced from main.o(.constdata)
- <LI><a href="#[89]">StartTouchTask</a> from main.o(i.StartTouchTask) referenced from main.o(.constdata)
+ <LI><a href="#[87]">StartBlinkTask</a> from freertos.o(i.StartBlinkTask) referenced from main.o(.constdata)
+ <LI><a href="#[86]">StartDefaultTask</a> from freertos.o(i.StartDefaultTask) referenced from main.o(.constdata)
+ <LI><a href="#[88]">StartDrawTask</a> from freertos.o(i.StartDrawTask) referenced from main.o(.constdata)
+ <LI><a href="#[89]">StartTouchTask</a> from freertos.o(i.StartTouchTask) referenced from main.o(.constdata)
  <LI><a href="#[13]">SysTick_Handler</a> from port.o(i.SysTick_Handler) referenced from startup_stm32f769xx.o(RESET)
  <LI><a href="#[82]">SystemInit</a> from system_stm32f7xx.o(i.SystemInit) referenced from startup_stm32f769xx.o(.text)
  <LI><a href="#[16]">TAMP_STAMP_IRQHandler</a> from startup_stm32f769xx.o(.text) referenced from startup_stm32f769xx.o(RESET)
@@ -1223,8 +1223,8 @@ Global Symbols
 
 <P><STRONG><a name="[be]"></a>HAL_GPIO_ReadPin</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, stm32f7xx_hal_gpio.o(i.HAL_GPIO_ReadPin))
 <BR><BR>[Called By]<UL><LI><a href="#[bd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;BSP_PlatformIsDetected
-<LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartDefaultTask
+<LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
 <P><STRONG><a name="[173]"></a>HAL_GPIO_TogglePin</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, stm32f7xx_hal_gpio.o(i.HAL_GPIO_TogglePin))
@@ -2020,7 +2020,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> sd_diskio.o(.constdata)
 </UL>
-<P><STRONG><a name="[87]"></a>StartBlinkTask</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, main.o(i.StartBlinkTask))
+<P><STRONG><a name="[87]"></a>StartBlinkTask</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, freertos.o(i.StartBlinkTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = StartBlinkTask &rArr; osDelay &rArr; vTaskDelay &rArr; xTaskResumeAll &rArr; xTaskIncrementTick
 </UL>
 <BR>[Calls]<UL><LI><a href="#[173]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_TogglePin
@@ -2028,7 +2028,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.constdata)
 </UL>
-<P><STRONG><a name="[86]"></a>StartDefaultTask</STRONG> (Thumb, 228 bytes, Stack size 16 bytes, main.o(i.StartDefaultTask))
+<P><STRONG><a name="[86]"></a>StartDefaultTask</STRONG> (Thumb, 228 bytes, Stack size 16 bytes, freertos.o(i.StartDefaultTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 256<LI>Call Chain = StartDefaultTask &rArr; PrintFullness &rArr; DrawNumOnContainer &rArr; DMA2D_DrawImage &rArr; HAL_DMA2D_BlendingStart &rArr; DMA2D_SetConfig
 </UL>
 <BR>[Calls]<UL><LI><a href="#[be]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
@@ -2040,7 +2040,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.constdata)
 </UL>
-<P><STRONG><a name="[88]"></a>StartDrawTask</STRONG> (Thumb, 206 bytes, Stack size 16 bytes, main.o(i.StartDrawTask))
+<P><STRONG><a name="[88]"></a>StartDrawTask</STRONG> (Thumb, 206 bytes, Stack size 16 bytes, freertos.o(i.StartDrawTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 256<LI>Call Chain = StartDrawTask &rArr; PrintFullness &rArr; DrawNumOnContainer &rArr; DMA2D_DrawImage &rArr; HAL_DMA2D_BlendingStart &rArr; DMA2D_SetConfig
 </UL>
 <BR>[Calls]<UL><LI><a href="#[e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osDelay
@@ -2052,7 +2052,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.constdata)
 </UL>
-<P><STRONG><a name="[89]"></a>StartTouchTask</STRONG> (Thumb, 32 bytes, Stack size 24 bytes, main.o(i.StartTouchTask))
+<P><STRONG><a name="[89]"></a>StartTouchTask</STRONG> (Thumb, 32 bytes, Stack size 24 bytes, freertos.o(i.StartTouchTask))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = StartTouchTask &rArr; osMessageGet &rArr; xQueueReceive &rArr; vTaskPlaceOnEventList &rArr; prvAddCurrentTaskToDelayedList &rArr; vListInsert
 </UL>
 <BR>[Calls]<UL><LI><a href="#[e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osDelay
@@ -2544,17 +2544,17 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[179]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_FillRectangle
 </UL>
-<BR>[Called By]<UL><LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartDefaultTask
+<BR>[Called By]<UL><LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;StartDefaultTask
+<LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
 <P><STRONG><a name="[1e0]"></a>pvPortMalloc</STRONG> (Thumb, 308 bytes, Stack size 24 bytes, heap_4.o(i.pvPortMalloc))
 <BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = pvPortMalloc &rArr; xTaskResumeAll &rArr; xTaskIncrementTick
 </UL>
-<BR>[Calls]<UL><LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
-<LI><a href="#[1e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vTaskSuspendAll
-<LI><a href="#[1e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvInsertBlockIntoFreeList
+<BR>[Calls]<UL><LI><a href="#[1e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvInsertBlockIntoFreeList
 <LI><a href="#[1e2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvHeapInit
+<LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
+<LI><a href="#[1e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vTaskSuspendAll
 </UL>
 <BR>[Called By]<UL><LI><a href="#[1b5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xQueueGenericCreate
 <LI><a href="#[1c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskCreate
@@ -2641,9 +2641,9 @@ Global Symbols
 <P><STRONG><a name="[1d4]"></a>vPortFree</STRONG> (Thumb, 148 bytes, Stack size 16 bytes, heap_4.o(i.vPortFree))
 <BR><BR>[Stack]<UL><LI>Max Depth = 56<LI>Call Chain = vPortFree &rArr; xTaskResumeAll &rArr; xTaskIncrementTick
 </UL>
-<BR>[Calls]<UL><LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
+<BR>[Calls]<UL><LI><a href="#[1e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvInsertBlockIntoFreeList
+<LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
 <LI><a href="#[1e1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vTaskSuspendAll
-<LI><a href="#[1e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvInsertBlockIntoFreeList
 </UL>
 <BR>[Called By]<UL><LI><a href="#[1c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskCreate
 <LI><a href="#[1d0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;prvDeleteTCB
@@ -2922,8 +2922,8 @@ Global Symbols
 <LI><a href="#[1c9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vListInsertEnd
 <LI><a href="#[1c8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uxListRemove
 </UL>
-<BR>[Called By]<UL><LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
-<LI><a href="#[13]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SysTick_Handler
+<BR>[Called By]<UL><LI><a href="#[13]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SysTick_Handler
+<LI><a href="#[1e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskResumeAll
 </UL>
 
 <P><STRONG><a name="[1d3]"></a>xTaskPriorityDisinherit</STRONG> (Thumb, 196 bytes, Stack size 16 bytes, tasks.o(i.xTaskPriorityDisinherit))
@@ -3755,8 +3755,8 @@ Local Symbols
 <P><STRONG><a name="[1d2]"></a>prvCopyDataToQueue</STRONG> (Thumb, 124 bytes, Stack size 24 bytes, queue.o(i.prvCopyDataToQueue))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = prvCopyDataToQueue &rArr; xTaskPriorityDisinherit
 </UL>
-<BR>[Calls]<UL><LI><a href="#[1d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskPriorityDisinherit
-<LI><a href="#[158]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy
+<BR>[Calls]<UL><LI><a href="#[158]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memcpy
+<LI><a href="#[1d3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xTaskPriorityDisinherit
 </UL>
 <BR>[Called By]<UL><LI><a href="#[1b6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xQueueGenericSend
 <LI><a href="#[1c0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;xQueueGenericSendFromISR
