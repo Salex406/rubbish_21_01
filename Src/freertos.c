@@ -48,7 +48,7 @@ struct Screen
 
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
-extern struct Screen screens[16];
+extern struct Screen screens[17];
 
 extern xQueueHandle gui_msg_q;
 extern osMessageQId TOUCH_Queue;
@@ -184,7 +184,7 @@ void StartTouchTask(void const * argument)
   	if (event.status == osEventMessage)
 		{
 			//HAL_GPIO_WritePin(GPIOJ,GPIO_PIN_13,GPIO_PIN_SET);
-			//Touchscreen_Handle_NewTouch();
+			Touchscreen_Handle_NewTouch();
 		}
     osDelay(10);
   }

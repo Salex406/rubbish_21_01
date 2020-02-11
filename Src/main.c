@@ -121,7 +121,8 @@ uint32_t OpenBMP(uint8_t *ptr, const char* fname)
 {
 	uint32_t ind=0,sz=0,i1=0,ind1=0;
 	uint32_t bytesread = 0;
-	FRESULT a = 217;
+	//FRESULT a = 217;
+	FRESULT a;
 	FIL MyFile; 
   static uint32_t bmp_addr;
 	a = f_open(&MyFile,fname,FA_READ);
@@ -294,7 +295,8 @@ int main(void)
 	uint8_t pr = 0;
 	uint8_t step = 100/NumberOfOdjectsToLoadFromSD;
 	FATFS_LinkDriver(&SD_Driver, SD_Path);
-	FRESULT a = 218;
+	//FRESULT a = 218;
+	FRESULT a;
 	if(HAL_GPIO_ReadPin(GPIOI,GPIO_PIN_15)==0)
 	{
 		a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);

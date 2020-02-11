@@ -5,6 +5,7 @@
 #include "stdio.h"
 
 
+
 struct Screen
 {
 	char  name[15];
@@ -16,7 +17,8 @@ struct Screen
 
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
-extern struct Screen screens[16];
+extern struct Screen screens[17];
+
 
 void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32_t color)
 {
@@ -35,6 +37,7 @@ void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32
   }
 }
 
+
 void TFT_FillScreen(uint32_t color)
 {
   hdma2d.Init.Mode = DMA2D_R2M;
@@ -49,6 +52,7 @@ void TFT_FillScreen(uint32_t color)
   }
 }
 
+//place progress bar (horisontal or vertical)
 void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t progress,uint8_t type,uint32_t color)
 {
 	if(type==PROGRESSBAR_HORIZONTAL)
@@ -64,6 +68,8 @@ void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t
 		TFT_FillRectangle(x, y - length, x + width, y - filledLength, 0xFFFFFFFF); 
 	}
 }
+
+
 TS_StateTypeDef  TS_State = {0};
 static uint32_t touchscreen_color_idx = 0;
 
@@ -195,6 +201,8 @@ uint32_t Touchscreen_Handle_NewTouch(void)
 extern DMA2D_HandleTypeDef hdma2d_discovery;
 extern LTDC_HandleTypeDef  hltdc_discovery;
 
+
+//func used in LCD_DrawBitmap, from ST libs
 static void ConvertLineToARGB8888(void *pSrc, void *pDst, uint32_t xSize, uint32_t ColorMode)
 {
   /* Configure the DMA2D Mode, Color Mode and output offset */
@@ -224,35 +232,8 @@ static void ConvertLineToARGB8888(void *pSrc, void *pDst, uint32_t xSize, uint32
   }
 }
 
-static void ConvertLineToARGB8888_blending(void *pSrc, void *pDst, uint32_t xSize, uint32_t ColorMode)
-{
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  hdma2d_discovery.Init.Mode         = DMA2D_M2M_PFC;
-  hdma2d_discovery.Init.ColorMode    = DMA2D_OUTPUT_ARGB8888;
-  hdma2d_discovery.Init.OutputOffset = 0;
 
-  /* Foreground Configuration */
-  hdma2d_discovery.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-  //hdma2d_discovery.LayerCfg[1].InputAlpha = 0xFF;
-  hdma2d_discovery.LayerCfg[1].InputColorMode = ColorMode;
-  hdma2d_discovery.LayerCfg[1].InputOffset = BSP_LCD_GetXSize() - 256;
-
-  hdma2d_discovery.Instance = DMA2D;
-
-  /* DMA2D Initialization */
-  if(HAL_DMA2D_Init(&hdma2d_discovery) == HAL_OK)
-  {
-    if(HAL_DMA2D_ConfigLayer(&hdma2d_discovery, 1) == HAL_OK)
-    {
-      if (HAL_DMA2D_Start(&hdma2d_discovery, (uint32_t)pSrc, (uint32_t)pDst, xSize, 1) == HAL_OK)
-      {
-        /* Polling For DMA transfer */
-        HAL_DMA2D_PollForTransfer(&hdma2d_discovery, 10);
-      }
-    }
-  }
-}
-
+//Draw bitmap file (bmp)
 void LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
 {
   uint32_t index = 0, width = 0, height = 0, bit_pixel = 0;
@@ -302,6 +283,7 @@ void LCD_DrawBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
     pbmp -= width*(bit_pixel/8);
   }
 }
+
 
 void ConvertBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
 {
@@ -353,6 +335,7 @@ void ConvertBitmap(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp)
   }
 }
 
+//Draw image with blending 
 void DMA2D_DrawImage(uint32_t data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
   uint32_t destination = LCD_FB_START_ADDRESS + (x + y * BSP_LCD_GetXSize()) * 4;
@@ -383,25 +366,6 @@ void DMA2D_DrawImage(uint32_t data, uint32_t x, uint32_t y, uint32_t width, uint
   HAL_DMA2D_PollForTransfer(&hdma2d_discovery, 10);
 }
 
-void DMA2D_DrawImage_simple(uint32_t data, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-{
-  DMA2D_HandleTypeDef hdma2d;
-  hdma2d_discovery.Instance = DMA2D;
-
-  hdma2d_discovery.Init.Mode = DMA2D_M2M;
-  hdma2d_discovery.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
-  hdma2d_discovery.Init.OutputOffset = BSP_LCD_GetXSize() - width;
-
-  // Foreground
-	hdma2d_discovery.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
-  hdma2d_discovery.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
-  hdma2d_discovery.LayerCfg[1].InputOffset = 0;
-
-  HAL_DMA2D_Init(&hdma2d);
-  HAL_DMA2D_ConfigLayer(&hdma2d, 1);
-  HAL_DMA2D_Start(&hdma2d, data, LCD_FB_START_ADDRESS + (x + y * BSP_LCD_GetXSize()) * 4, width, height);
-  HAL_DMA2D_PollForTransfer(&hdma2d, 10);
-}
 
 uint8_t b[16];
 uint32_t b1[16];
@@ -411,6 +375,8 @@ uint16_t height=0;
 unsigned long ex = 0;
 FRESULT a;
 uint32_t bytesread = 0;
+
+//read image from .h from SD card
 uint32_t ReadImage(uint32_t *ptr, const char* fname)
 {
 	FIL MyFile; 
@@ -447,6 +413,8 @@ uint32_t ReadImage(uint32_t *ptr, const char* fname)
 		return 0;
   }
 }
+
+
 
 void DrawNumOnContainer(uint8_t num, uint8_t pos)
 {
@@ -550,13 +518,13 @@ void PrintFullness(uint8_t container,uint8_t perc)
 	switch (container){
 		case 1:
 			if(dec==0){DrawNumOnContainer(edin,2);break;}
-			else{DrawNumOnContainer(dec,1);DrawNumOnContainer(edin,2);break;}
+			else{DrawNumOnContainer(dec,1);osDelay(3);DrawNumOnContainer(edin,2);break;}
 		case 2:
 			if(dec==0){DrawNumOnContainer(edin,4);break;}
-			else{DrawNumOnContainer(dec,3);DrawNumOnContainer(edin,4);break;}
+			else{DrawNumOnContainer(dec,3);osDelay(3);DrawNumOnContainer(edin,4);break;}
 		case 3:
 			if(dec==0){DrawNumOnContainer(edin,6);break;}
-			else{DrawNumOnContainer(dec,5);DrawNumOnContainer(edin,6);break;}
+			else{DrawNumOnContainer(dec,5);osDelay(3);DrawNumOnContainer(edin,6);break;}
 	}
 }
 
