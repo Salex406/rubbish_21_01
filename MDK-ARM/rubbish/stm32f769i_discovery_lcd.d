@@ -52,4 +52,7 @@ rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/font24.c
 rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/font20.c
 rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/font16.c
 rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/font12.c
+rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/rus24.c
+rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/bahn24.c
 rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/font8.c
+rubbish\stm32f769i_discovery_lcd.o: ..\Src\../Fonts/rus48.c

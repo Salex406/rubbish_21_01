@@ -29,6 +29,7 @@
 #include "gui.h"
 #include "stm32f769i_discovery_lcd.h"
 #include "stdio.h"
+#include "locale.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,7 +39,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-struct Screen
+struct Image
 {
 	char  name[15];
 	char  filename[15];
@@ -47,9 +48,25 @@ struct Screen
 	uint32_t* location;
 };
 
+typedef enum {
+    MAIN,        //0
+    SETTINGS,        //1
+    CALL,    //2
+    HELP,      //3
+    FIRST_BIN,      //4
+		SECOND_BIN,//5
+		THIRD_BIN//6
+}Screen;
+
+extern const uint16_t RightButtonX;
+extern const uint16_t LeftButtonX;
+extern const uint16_t TopButtonY;
+extern const uint16_t BottomButtonY;
+
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
-extern struct Screen screens[17];
+extern struct Image images[17];
+extern Screen CurrentScreen;
 
 extern xQueueHandle gui_msg_q;
 extern osMessageQId TOUCH_Queue;
@@ -68,7 +85,7 @@ extern osMessageQId TOUCH_Queue;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void StartBlinkTask(void const * argument);
-void StartDrawTask(void const * argument);
+void ScreensDrawer(void const * argument);
 void StartTouchTask(void const * argument);
 void StartDefaultTask(void const * argument);
 /* USER CODE END FunctionPrototypes */
@@ -111,7 +128,7 @@ void StartDefaultTask(void const * argument)
 		{
 			//Touchscreen_Handle_NewTouch();
 			//LCD_DrawBitmap(0,0,(uint8_t *)screens[0].location);
-			DMA2D_DrawImage((uint32_t)screens[16].location, 126, 70, 540, 400);
+			DMA2D_DrawImage((uint32_t)images[16].location, 126, 70, 540, 400);
 			osDelay(10);
 			placePrBar(166,446,168,98,i,PROGRESSBAR_VERTICAL,0xFF00b800);
 			placePrBar(350,446,168,98,j,PROGRESSBAR_VERTICAL,LCD_COLOR_YELLOW);
@@ -136,7 +153,7 @@ void StartDefaultTask(void const * argument)
 		}
 }
 
-void StartDrawTask(void const * argument)
+void ScreensDrawer(void const * argument)
 {
   /* Infinite loop */
   for(;;)
@@ -144,14 +161,14 @@ void StartDrawTask(void const * argument)
 		uint8_t msg = 15;
 		if (xQueueReceive(gui_msg_q, &msg, 0) == pdTRUE)
 		{
-			if(msg==0)
+			if(msg==MAIN)
 			{
 				//main screen
-				LCD_DrawBitmap(0,0,(uint8_t *)screens[msg].location);
-				DMA2D_DrawImage((uint32_t)screens[1].location, 670, 342, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[2].location, 13, 342, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[3].location, 670, 13, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[16].location, 126, 70, 540, 400);
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[1].location, RightButtonX, BottomButtonY, 120, 120);
+				DMA2D_DrawImage((uint32_t)images[2].location, LeftButtonX, BottomButtonY, 120, 120);
+				DMA2D_DrawImage((uint32_t)images[3].location, RightButtonX, TopButtonY, 120, 120);
+				DMA2D_DrawImage((uint32_t)images[16].location, 126, 70, 540, 400);
 				osDelay(10);
 				PrintFullness(1,0);
 				osDelay(5);
@@ -160,16 +177,35 @@ void StartDrawTask(void const * argument)
 				PrintFullness(3,0);
 				osDelay(5);
 				DrawPercents();
+				CurrentScreen = MAIN;
 				
-				/*DrawNumOnContainer(9, 1);
-				DrawNumOnContainer(8, 2);
-				DrawNumOnContainer(7, 3);
-				DrawNumOnContainer(6, 4);
-				DrawNumOnContainer(5, 5);
-				DrawNumOnContainer(4, 6);*/
+			uint8_t lcd_string[60] = "";
+			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+      //BSP_LCD_SetFont(&Font12);
+			BSP_LCD_SetFont(&rus48);
+			//setlocale(LC_ALL, "RU");
+			//sprintf((char*)lcd_string, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя");
+			sprintf((char*)lcd_string, "ABCDEFGHIJKLMNOP");
+			BSP_LCD_DisplayStringAt(0, 10, lcd_string, LEFT_MODE,0);
+			sprintf((char*)lcd_string, "QRSTUVWXYZ[\]^_`a");
+			BSP_LCD_DisplayStringAt(0, 45, lcd_string, LEFT_MODE,0);
 			}
 			
-			//DMA2D_DrawImage(0xC0700000, 50, 50, 120, 120);
+			if(msg==SETTINGS)
+			{
+				//settings screen
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				uint8_t lcd_string[40] = "";
+				sprintf((char*)lcd_string,"pASTRPKLJ");
+				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+				BSP_LCD_SetFont(&rus48);
+				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				osDelay(10);
+				CurrentScreen = SETTINGS;
+			}
+			
 		}
     osDelay(400);
   }
@@ -188,35 +224,52 @@ void StartTouchTask(void const * argument)
 			uint16_t x = -1, y = -1;
 			get_touch_pos(&x, &y);
 			print_touch_pos(x, y);
-			
 			uint8_t lcd_string[60] = "";
-			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-      BSP_LCD_SetFont(&Font12);
+			BSP_LCD_SetFont(&Font20);
 			if(x > 0 && x < 115 && y > 0 && y < 115)
 			{
 				//left top button
-				sprintf((char*)lcd_string, "left top button");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+				sprintf((char*)lcd_string, "left top");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+				Screen screenToLoad;
+				switch(CurrentScreen){
+					case SETTINGS: 
+						screenToLoad = MAIN;
+						xQueueSend(gui_msg_q, &screenToLoad, 0);
+						break;
+					default:
+						break;
+			}
 			}
 			else if(x > 700 && y < 115)
 			{
 				//right top button
-				sprintf((char*)lcd_string, "right top button");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+				sprintf((char*)lcd_string, "right top");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
 			}
 			else if(x < 115 && y > 320)
 			{
 				//left bottom button
-				sprintf((char*)lcd_string, "left bottom button");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
+				sprintf((char*)lcd_string, "left bottom");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+				Screen screenToLoad;
+				switch(CurrentScreen){
+					case MAIN: 
+						screenToLoad = SETTINGS;
+						xQueueSend(gui_msg_q, &screenToLoad, 0);
+						break;
+					default:
+						break;
+			}
 			}
 			else if(x > 700 && y > 320)
 			{
 				//right bottom button
-				sprintf((char*)lcd_string, "right bottom button");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, lcd_string, RIGHT_MODE);
-			}
+				sprintf((char*)lcd_string, "right bottom");
+				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+			
 		}
+	}
     osDelay(50);
   }
 }

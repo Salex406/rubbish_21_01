@@ -74,10 +74,14 @@ typedef struct _tFont
 } sFONT;
 
 extern sFONT Font24;
+extern sFONT rus24;
+extern sFONT rus18;
+extern sFONT rus48;
 extern sFONT Font20;
 extern sFONT Font16;
 extern sFONT Font12;
 extern sFONT Font8;
+extern sFONT bahn24;
 /**
   * @}
   */ 

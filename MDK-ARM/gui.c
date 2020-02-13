@@ -6,7 +6,7 @@
 
 
 
-struct Screen
+struct Image
 {
 	char  name[15];
 	char  filename[15];
@@ -17,15 +17,125 @@ struct Screen
 
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
-extern struct Screen screens[17];
+extern struct Image images[17];
 
+//load .bmp to RAM
+uint32_t OpenBMP(uint8_t *ptr, const char* fname)
+{
+	uint8_t sect[4096];
+	uint32_t ind=0,sz=0,i1=0,ind1=0;
+	uint32_t bytesread = 0;
+	//FRESULT a = 217;
+	FRESULT a;
+	FIL MyFile; 
+  static uint32_t bmp_addr;
+	a = f_open(&MyFile,fname,FA_READ);
+  if(a!=FR_OK)
+  {
+		return 1;
+  }
+  else
+  {
+    if(f_read(&MyFile,sect,30,(UINT *)&bytesread)!=FR_OK)
+    {
+      return 1;
+    }
+    else
+    {
+      bmp_addr=(uint32_t)sect;
+      /*Get bitmap size*/
+      sz=*(uint16_t*)(bmp_addr + 2);
+      sz|=(*(uint16_t*)(bmp_addr + 4))<<16;
+      /*Get bitmap data address offset*/
+      ind=*(uint16_t*)(bmp_addr + 0x000A);
+      ind|=(*(uint16_t*)(bmp_addr + 12))<<16;
+      f_close(&MyFile);
+      f_open(&MyFile,fname,FA_READ);
+      ind=0;
+      do
+      {
+        if(sz<4096)
+        {
+          i1=sz;
+        }
+        else
+        {
+          i1=4096;
+        }
+        sz-=i1;
+        f_lseek(&MyFile,ind1);
+        f_read(&MyFile,sect,i1,(UINT *)&bytesread);
+        memcpy((void*)(ptr+ind1),(void*)sect,i1);
+        ind1+=i1;
+      }
+      while(sz>0);
+      f_close(&MyFile);
+    }
+    ind1=0;
+		return 0;
+  }
+}
+
+uint8_t LoadImagesFromSdToRAM()
+{
+	FATFS SDFatFs;  /* File system object for SD card logical drive */
+	char SD_Path[4]; /* SD card logical drive path */
+	//from main.c
+	extern uint8_t NumberOfOdjectsToLoadFromSD;
+	extern uint16_t LoadProgressBarPosX;
+	extern uint16_t LoadProgressBarPosY;
+	extern uint16_t LoadProgressBarLength;
+	extern uint8_t LoadProgressBarWidth;
+	
+	BSP_LCD_SetFont(&rus48);
+	BSP_LCD_DisplayStringAt(0,235,(uint8_t*)"jADRUILA...",CENTER_MODE, 1); //"Loading.."
+	BSP_LCD_SetFont(&Font20)
+	;
+	//Loading bitmaps to RAM
+	uint8_t pr = 0;
+	uint8_t step = 100/NumberOfOdjectsToLoadFromSD;
+	FATFS_LinkDriver(&SD_Driver, SD_Path);
+	//FRESULT a = 218;
+	FRESULT a;
+	if(HAL_GPIO_ReadPin(GPIOI,GPIO_PIN_15)==0)
+	{
+		a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
+		if(a==FR_OK)
+		{		
+				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+			
+				//load image to RAM from .bmp file
+				uint8_t res = OpenBMP((uint8_t *)images[0].location,images[0].filename);
+				if(res==1){ BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE, 1); Error_Handler();}
+				pr+=step;
+				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+				
+				//load images to RAM from .h files
+				for(uint8_t i=1;i<NumberOfOdjectsToLoadFromSD;i++)
+				{
+					res = ReadImage(images[i].location,images[i].filename);
+					if(res==1)
+					{
+						char* error_str;
+						sprintf(error_str,"File %d open error. Pls reboot and check SD card.",i+1);
+						Error_Handler();
+					}
+						pr+=step;
+						placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+				}
+		}
+		else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD mount error",CENTER_MODE, 1); Error_Handler();}
+	}
+	else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD is not connected",CENTER_MODE, 1); Error_Handler();}
+	return 0;
+}
 
 void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32_t color)
 {
   if(x1>x2) swap(x1,x2);
   if(y1>y2) swap(y1,y2);
   uint32_t addr = 0;
-  addr = FRAMEBUFER_ADDR + 4*(y1*hltdc.LayerCfg[0].ImageWidth + x1);
+	addr = FRAMEBUFER_ADDR + 4*(y1*hltdc.LayerCfg[0].ImageWidth + x1);
   hdma2d.Init.Mode = DMA2D_R2M;
   hdma2d.Init.OutputOffset = hltdc.LayerCfg[0].ImageWidth-(x2-x1);
   if(HAL_DMA2D_Init(&hdma2d) == HAL_OK)
@@ -69,12 +179,11 @@ void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t
 	}
 }
 
-
-TS_StateTypeDef  TS_State = {0};
-static uint32_t touchscreen_color_idx = 0;
-
+//func from ST. Is not used now
 uint32_t Touchscreen_Handle_NewTouch(void)
 {
+TS_StateTypeDef  TS_State = {0};
+static uint32_t touchscreen_color_idx = 0;
 #define TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS 15
 #define TOUCH_INFO_STRING_SIZE                70
   uint16_t x1 = 0;
@@ -109,11 +218,11 @@ uint32_t Touchscreen_Handle_NewTouch(void)
 			
 			x1 = TS_State.touchX[0];
 			y1 = TS_State.touchY[0];
-      BSP_LCD_SetFont(&Font12);
+      BSP_LCD_SetFont(&Font20);
       sprintf((char*)lcd_string, "x1 = %d, y1 = %d",
               x1,
               y1);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE);
+      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE, 1);
     //BSP_LCD_FillRect(0, 80, BSP_LCD_GetXSize(), BSP_LCD_GetYSize() - 160);
 
     /* Re-Draw touch screen play area on LCD */
@@ -200,7 +309,6 @@ uint32_t Touchscreen_Handle_NewTouch(void)
 
 extern DMA2D_HandleTypeDef hdma2d_discovery;
 extern LTDC_HandleTypeDef  hltdc_discovery;
-
 
 //func used in LCD_DrawBitmap, from ST libs
 static void ConvertLineToARGB8888(void *pSrc, void *pDst, uint32_t xSize, uint32_t ColorMode)
@@ -420,91 +528,91 @@ void DrawNumOnContainer(uint8_t num, uint8_t pos)
 {
 	if(pos == 1){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 173, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 173, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 173, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 173, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 173, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 173, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 173, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 173, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 173, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 173, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 173, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 173, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 173, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 173, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 173, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 173, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 173, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 173, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 173, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 173, 138, 42, 66);break;
 		}
 	}
 	else if(pos == 2){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 219, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 219, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 219, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 219, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 219, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 219, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 219, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 219, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 219, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 219, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 219, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 219, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 219, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 219, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 219, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 219, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 219, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 219, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 219, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 219, 138, 42, 66);break;
 		}
 		//DMA2D_DrawImage((uint32_t)screens[6].location, 216, 123, 41, 66);
 		
 	}
 	else if(pos == 3){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 343, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 343, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 343, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 343, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 343, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 343, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 343, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 343, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 343, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 343, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 343, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 343, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 343, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 343, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 343, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 343, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 343, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 343, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 343, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 343, 138, 42, 66);break;
 		}
 		//DMA2D_DrawImage((uint32_t)screens[7].location, 340, 123, 41, 66);
 	}
 	else if(pos == 4){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 389, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 389, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 389, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 389, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 389, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 389, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 389, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 389, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 389, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 389, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 389, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 389, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 389, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 389, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 389, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 389, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 389, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 389, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 389, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 389, 138, 42, 66);break;
 		}
 		//DMA2D_DrawImage((uint32_t)screens[8].location, 386, 123, 41, 66);
 	}
 	else if(pos == 5){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 516, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 516, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 516, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 516, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 516, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 516, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 516, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 516, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 516, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 516, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 516, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 516, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 516, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 516, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 516, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 516, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 516, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 516, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 516, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 516, 138, 42, 66);break;
 		}
 		//DMA2D_DrawImage((uint32_t)screens[9].location, 513, 123, 46, 66);
 	}
 	else if(pos == 6){
 		switch (num){
-			case 0: DMA2D_DrawImage((uint32_t)screens[5].location, 562, 138, 44, 66);break;
-			case 1: DMA2D_DrawImage((uint32_t)screens[6].location, 562, 138, 41, 66);break;
-			case 2: DMA2D_DrawImage((uint32_t)screens[7].location, 562, 138, 41, 66);break;
-			case 3: DMA2D_DrawImage((uint32_t)screens[8].location, 562, 138, 41, 66);break;
-			case 4: DMA2D_DrawImage((uint32_t)screens[9].location, 562, 138, 46, 66);break;
-			case 5: DMA2D_DrawImage((uint32_t)screens[10].location, 562, 138, 42, 66);break;
-			case 6: DMA2D_DrawImage((uint32_t)screens[11].location, 562, 138, 42, 66);break;
-			case 7: DMA2D_DrawImage((uint32_t)screens[12].location, 562, 138, 42, 66);break;
-			case 8: DMA2D_DrawImage((uint32_t)screens[13].location, 562, 138, 42, 66);break;
-			case 9: DMA2D_DrawImage((uint32_t)screens[14].location, 562, 138, 42, 66);break;
+			case 0: DMA2D_DrawImage((uint32_t)images[5].location, 562, 138, 44, 66);break;
+			case 1: DMA2D_DrawImage((uint32_t)images[6].location, 562, 138, 41, 66);break;
+			case 2: DMA2D_DrawImage((uint32_t)images[7].location, 562, 138, 41, 66);break;
+			case 3: DMA2D_DrawImage((uint32_t)images[8].location, 562, 138, 41, 66);break;
+			case 4: DMA2D_DrawImage((uint32_t)images[9].location, 562, 138, 46, 66);break;
+			case 5: DMA2D_DrawImage((uint32_t)images[10].location, 562, 138, 42, 66);break;
+			case 6: DMA2D_DrawImage((uint32_t)images[11].location, 562, 138, 42, 66);break;
+			case 7: DMA2D_DrawImage((uint32_t)images[12].location, 562, 138, 42, 66);break;
+			case 8: DMA2D_DrawImage((uint32_t)images[13].location, 562, 138, 42, 66);break;
+			case 9: DMA2D_DrawImage((uint32_t)images[14].location, 562, 138, 42, 66);break;
 		}
 		//DMA2D_DrawImage((uint32_t)screens[10].location, 559, 123, 42, 66);
 	}
@@ -530,18 +638,17 @@ void PrintFullness(uint8_t container,uint8_t perc)
 
 void DrawPercents()
 {
-				DMA2D_DrawImage((uint32_t)screens[15].location, 263, 178, 23, 26);
+				DMA2D_DrawImage((uint32_t)images[15].location, 263, 178, 23, 26);
 				osDelay(5);
-				DMA2D_DrawImage((uint32_t)screens[15].location, 433, 178, 23, 26);
+				DMA2D_DrawImage((uint32_t)images[15].location, 433, 178, 23, 26);
 				osDelay(5);	
-				DMA2D_DrawImage((uint32_t)screens[15].location, 608, 178, 23, 26);
+				DMA2D_DrawImage((uint32_t)images[15].location, 608, 178, 23, 26);
 }
 
 void get_touch_pos(uint16_t *x, uint16_t *y)
 {
 	TS_StateTypeDef  TS_State = {0};
-	uint32_t ts_status = TS_OK;
-	ts_status = BSP_TS_GetState(&TS_State);
+	BSP_TS_GetState(&TS_State);
 	*x = TS_State.touchX[0];
 	*y = TS_State.touchY[0];
 }
@@ -555,5 +662,5 @@ void print_touch_pos(uint16_t x, uint16_t y)
 			
 			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
       BSP_LCD_SetFont(&Font12);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE);
+      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE, 1);
 }

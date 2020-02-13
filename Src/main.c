@@ -31,19 +31,42 @@
 #include "string.h"
 #include "gui.h"
 #include "stdlib.h"
+#include "stdio.h"
+
+typedef enum {
+    MAIN,        //0
+    SETTINGS,        //1
+    CALL,    //2
+    HELP,      //3
+    FIRST_BIN,      //4
+		SECOND_BIN,//5
+		THIRD_BIN//6
+}Screen;
+
+const uint8_t NumberOfOdjectsToLoadFromSD = 17;
+const uint16_t LoadProgressBarPosY = 285;
+const uint16_t LoadProgressBarPosX = 228;
+const uint16_t LoadProgressBarLength = 260;
+const uint8_t LoadProgressBarWidth = 35;
+const uint8_t DistanceBetweenStrings48 = 35;
+
+const uint16_t RightButtonX = 670;
+const uint16_t LeftButtonX = 13;
+const uint16_t TopButtonY = 13;
+const uint16_t BottomButtonY = 342;
+
+Screen CurrentScreen;
+
 
 xQueueHandle gui_msg_q;
 osMessageQId TOUCH_Queue;
 
-FATFS SDFatFs;  /* File system object for SD card logical drive */
-char SD_Path[4]; /* SD card logical drive path */
-const uint8_t NumberOfOdjectsToLoadFromSD = 17;
 uint8_t sect[4096];
 uint32_t ts_status = TS_OK;
 #define LCD_FRAME_BUFFER SDRAM_DEVICE_ADDR
 
 
-struct Screen
+struct Image
 {
 	char  name[15];
 	char  filename[15];
@@ -52,7 +75,7 @@ struct Screen
 	uint32_t* location;
 };
 
-struct Screen screens[17];
+struct Image images[17];
 //0 - main
 //1 - help icon
 //2 - settings icon
@@ -111,67 +134,12 @@ extern void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 extern void StartBlinkTask(void const * argument);
-extern void StartDrawTask(void const * argument);
+extern void ScreensDrawer(void const * argument);
 extern void StartTouchTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint32_t OpenBMP(uint8_t *ptr, const char* fname)
-{
-	uint32_t ind=0,sz=0,i1=0,ind1=0;
-	uint32_t bytesread = 0;
-	//FRESULT a = 217;
-	FRESULT a;
-	FIL MyFile; 
-  static uint32_t bmp_addr;
-	a = f_open(&MyFile,fname,FA_READ);
-  if(a!=FR_OK)
-  {
-		return 1;
-  }
-  else
-  {
-    if(f_read(&MyFile,sect,30,(UINT *)&bytesread)!=FR_OK)
-    {
-      return 1;
-    }
-    else
-    {
-      bmp_addr=(uint32_t)sect;
-      /*Get bitmap size*/
-      sz=*(uint16_t*)(bmp_addr + 2);
-      sz|=(*(uint16_t*)(bmp_addr + 4))<<16;
-      /*Get bitmap data address offset*/
-      ind=*(uint16_t*)(bmp_addr + 0x000A);
-      ind|=(*(uint16_t*)(bmp_addr + 12))<<16;
-      f_close(&MyFile);
-      f_open(&MyFile,fname,FA_READ);
-      ind=0;
-      do
-      {
-        if(sz<4096)
-        {
-          i1=sz;
-        }
-        else
-        {
-          i1=4096;
-        }
-        sz-=i1;
-        f_lseek(&MyFile,ind1);
-        f_read(&MyFile,sect,i1,(UINT *)&bytesread);
-        memcpy((void*)(ptr+ind1),(void*)sect,i1);
-        ind1+=i1;
-      }
-      while(sz>0);
-      f_close(&MyFile);
-    }
-    ind1=0;
-		return 0;
-  }
-}
-
 
 /* USERCODE END 0 */
 
@@ -182,10 +150,8 @@ uint32_t OpenBMP(uint8_t *ptr, const char* fname)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
   
-
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
 
@@ -198,14 +164,12 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -218,42 +182,43 @@ int main(void)
   MX_SDMMC2_SD_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
-  /* USER CODE BEGIN 2 */
-	strcpy(screens[0].filename, "m_scr_v2.bmp");
-	strcpy(screens[1].filename, "help.h");//"bg_R.bmp"
-	strcpy(screens[2].filename, "settings.h");
-	strcpy(screens[3].filename, "call.h");
-	strcpy(screens[4].filename, "back.h");
-	strcpy(screens[5].filename, "0.h");
-	strcpy(screens[6].filename, "1.h");
-	strcpy(screens[7].filename, "2.h");
-	strcpy(screens[8].filename, "3.h");
-	strcpy(screens[9].filename, "4.h");
-	strcpy(screens[10].filename, "5.h");
-	strcpy(screens[11].filename, "6.h");
-	strcpy(screens[12].filename, "7.h");
-	strcpy(screens[13].filename, "8.h");
-	strcpy(screens[14].filename, "9.h");
-	strcpy(screens[15].filename, "perc.h");
-	strcpy(screens[16].filename, "cont.h");
 	
-	strcpy(screens[0].name, "main");
-	strcpy(screens[1].name, "i_help");
-	strcpy(screens[2].name, "i_settings");
-	strcpy(screens[3].name, "i_call");
-	strcpy(screens[4].name, "i_back");
-	strcpy(screens[5].name, "n_0");
-	strcpy(screens[6].name, "n_1");
-	strcpy(screens[7].name, "n_2");
-	strcpy(screens[8].name, "n_3");
-	strcpy(screens[9].name, "n_4");
-	strcpy(screens[10].name, "n_5");
-	strcpy(screens[11].name, "n_6");
-	strcpy(screens[12].name, "n_7");
-	strcpy(screens[13].name, "n_5");
-	strcpy(screens[14].name, "n_9");
-	strcpy(screens[15].name, "n_perc");
-	strcpy(screens[16].name, "i_cont");
+  /* USER CODE BEGIN 2 */
+	strcpy(images[0].filename, "m_scr_v2.bmp");
+	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
+	strcpy(images[2].filename, "settings.h");
+	strcpy(images[3].filename, "call.h");
+	strcpy(images[4].filename, "back.h");
+	strcpy(images[5].filename, "0.h");
+	strcpy(images[6].filename, "1.h");
+	strcpy(images[7].filename, "2.h");
+	strcpy(images[8].filename, "3.h");
+	strcpy(images[9].filename, "4.h");
+	strcpy(images[10].filename, "5.h");
+	strcpy(images[11].filename, "6.h");
+	strcpy(images[12].filename, "7.h");
+	strcpy(images[13].filename, "8.h");
+	strcpy(images[14].filename, "9.h");
+	strcpy(images[15].filename, "perc.h");
+	strcpy(images[16].filename, "cont.h");
+	
+	strcpy(images[0].name, "main");
+	strcpy(images[1].name, "i_help");
+	strcpy(images[2].name, "i_settings");
+	strcpy(images[3].name, "i_call");
+	strcpy(images[4].name, "i_back");
+	strcpy(images[5].name, "n_0");
+	strcpy(images[6].name, "n_1");
+	strcpy(images[7].name, "n_2");
+	strcpy(images[8].name, "n_3");
+	strcpy(images[9].name, "n_4");
+	strcpy(images[10].name, "n_5");
+	strcpy(images[11].name, "n_6");
+	strcpy(images[12].name, "n_7");
+	strcpy(images[13].name, "n_5");
+	strcpy(images[14].name, "n_9");
+	strcpy(images[15].name, "n_perc");
+	strcpy(images[16].name, "i_cont");
 	//1 screen is 0x119800
 	//1 icon is 1fc00
 	//1 big_num is 6c00
@@ -263,152 +228,44 @@ int main(void)
 	//2 - settings icon
 	//3 - call icon
 	//4 - back icon
-	screens[0].location = (uint32_t *)0xC0300000;
-	screens[1].location = (uint32_t *)0xC0419800;//0xC0410800;
-	screens[2].location = (uint32_t *)0xC0439400;
-	screens[3].location = (uint32_t *)0xC0459000;
-	screens[4].location = (uint32_t *)0xC0478C00;
-	
-	screens[5].location = (uint32_t *)0xC0498800; //0
-	screens[6].location = (uint32_t *)0xC049F400; //1
-	screens[7].location = (uint32_t *)0xC04ACC00; //2
-	screens[8].location = (uint32_t *)0xC04B3800; //3
-	screens[9].location = (uint32_t *)0xC04BA400; //4
-	screens[10].location = (uint32_t *)0xC04C1000; //5
-	screens[11].location = (uint32_t *)0xC04C7C00; //6
-	screens[12].location = (uint32_t *)0xC04CE800; //7
-	screens[13].location = (uint32_t *)0xC04D5400;
-	screens[14].location = (uint32_t *)0xC04DC000;
-	screens[15].location = (uint32_t *)0xC04E2C00;
-	screens[16].location = (uint32_t *)0xC04E9800; //containers
-	
+	images[0].location = (uint32_t *)0xC0300000;
+	images[1].location = (uint32_t *)0xC0419800;//0xC0410800;
+	images[2].location = (uint32_t *)0xC0439400;
+	images[3].location = (uint32_t *)0xC0459000;
+	images[4].location = (uint32_t *)0xC0478C00;
+	images[5].location = (uint32_t *)0xC0498800; //0
+	images[6].location = (uint32_t *)0xC049F400; //1
+	images[7].location = (uint32_t *)0xC04ACC00; //2
+	images[8].location = (uint32_t *)0xC04B3800; //3
+	images[9].location = (uint32_t *)0xC04BA400; //4
+	images[10].location = (uint32_t *)0xC04C1000; //5
+	images[11].location = (uint32_t *)0xC04C7C00; //6
+	images[12].location = (uint32_t *)0xC04CE800; //7
+	images[13].location = (uint32_t *)0xC04D5400;
+	images[14].location = (uint32_t *)0xC04DC000;
+	images[15].location = (uint32_t *)0xC04E2C00;
+	images[16].location = (uint32_t *)0xC04E9800; //containers
 																	//0xC1000000
+																	
 	BSP_LCD_Init();
 	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
 	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
 	TFT_FillScreen(LCD_COLOR_WHITE);
-	//BSP_LCD_Clear(LCD_COLOR_WHITE);
-	BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"Loading..",CENTER_MODE);
 	
-	
-	//Loading bitmaps to RAM
-	uint8_t pr = 0;
-	uint8_t step = 100/NumberOfOdjectsToLoadFromSD;
-	FATFS_LinkDriver(&SD_Driver, SD_Path);
-	//FRESULT a = 218;
-	FRESULT a;
-	if(HAL_GPIO_ReadPin(GPIOI,GPIO_PIN_15)==0)
-	{
-		a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
-		if(a==FR_OK)
-		{		
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				uint8_t res = OpenBMP((uint8_t *)screens[0].location,screens[0].filename);
-				if(res==1){ BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				res = ReadImage(screens[1].location,screens[1].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 2 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				res = ReadImage(screens[2].location,screens[2].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 3 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[3].location,screens[3].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 4 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[4].location,screens[4].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 5 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[5].location,screens[5].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 6 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[6].location,screens[6].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 7 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[7].location,screens[7].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 8 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[8].location,screens[8].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 9 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[9].location,screens[9].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 10 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[10].location,screens[10].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 11 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[11].location,screens[11].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 12 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[12].location,screens[12].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 13 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[13].location,screens[13].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 14 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[14].location,screens[14].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 15 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[15].location,screens[15].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 16 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[16].location,screens[16].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 17 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				
-				placePrBar(280,266,200,30,100,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-		}
-		else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD mount error",CENTER_MODE); Error_Handler();}
-	}
-	else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD is not connected",CENTER_MODE); Error_Handler();}
-	uint8_t msg=0;
-	
+	//load images
+	LoadImagesFromSdToRAM();
+
+	//draw main screen
+	Screen screenToLoad = MAIN;
 	gui_msg_q = xQueueGenericCreate(1, 1, 0);
-	//uint8_t* location = (uint8_t *)0xC0419094;
-	//ConvertBitmap(0,0,location);
-	xQueueSend(gui_msg_q, &msg, 0);
-	ts_status = BSP_TS_Init(800,480);
-	ts_status = BSP_TS_ITConfig();
-	osMessageQDef(usart_Queue, 1, uint8_t);
-  TOUCH_Queue = osMessageCreate(osMessageQ(usart_Queue), NULL);
+	xQueueSend(gui_msg_q, &screenToLoad, 0);
 	
-	//BSP_LCD_DrawBitmap(0,0,(uint8_t *)main_screen);
-	//placePrBar(520,20,100,40,0,0,LCD_COLOR_BLUE);
-	//TFT_FillRectangle(20, 20, 40, 70, LCD_COLOR_BLUE);
-	//a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
-	//a = f_open(&JPEG_File, "im.bmp", FA_READ);
+	//init touchscreen
+	BSP_TS_Init(800,480);
+	BSP_TS_ITConfig();
+	osMessageQDef(touch_Queue, 1, uint8_t);
+  TOUCH_Queue = osMessageCreate(osMessageQ(touch_Queue), NULL);
+	
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -440,7 +297,7 @@ int main(void)
   blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
 	
 	/* definition and creation of drawTask */
-  osThreadDef(drawTask, StartDrawTask, osPriorityNormal, 0, 1280);
+  osThreadDef(drawTask, ScreensDrawer, osPriorityNormal, 0, 1280);
   drawTaskHandle = osThreadCreate(osThread(drawTask), NULL);
 	
 	/* definition and creation of touchTask */

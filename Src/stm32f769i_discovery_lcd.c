@@ -97,7 +97,10 @@ EndDependencies */
 #include "../Fonts/font20.c"
 #include "../Fonts/font16.c"
 #include "../Fonts/font12.c"
+#include "../Fonts/rus24.c"
+#include "../Fonts/bahn24.c"
 #include "../Fonts/font8.c"
+#include "../Fonts/rus48.c"
 
 /** @addtogroup BSP
   * @{
@@ -254,7 +257,7 @@ static LCD_DrawPropTypeDef DrawProp[LTDC_MAX_LAYER_NUMBER];
 /** @defgroup STM32F769I_DISCOVERY_LCD_Private_FunctionPrototypes LCD Private FunctionPrototypes
   * @{
   */
-static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c);
+static void DrawChar(uint16_t Xpos, uint16_t Ypos, uint8_t background, const uint8_t *c);
 static void FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3);
 static void LL_FillBuffer(uint32_t LayerIndex, void *pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine, uint32_t ColorIndex);
 static void LL_ConvertLineToARGB8888(void * pSrc, void *pDst, uint32_t xSize, uint32_t ColorMode);
@@ -999,9 +1002,9 @@ void BSP_LCD_ClearStringLine(uint32_t Line)
   * @param  Ascii: Character ascii code
   *           This parameter must be a number between Min_Data = 0x20 and Max_Data = 0x7E
   */
-void BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
+void BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii, uint8_t background)
 {
-  DrawChar(Xpos, Ypos, &DrawProp[ActiveLayer].pFont->table[(Ascii-' ') *\
+  DrawChar(Xpos, Ypos, background, &DrawProp[ActiveLayer].pFont->table[(Ascii-' ') *\
     DrawProp[ActiveLayer].pFont->Height * ((DrawProp[ActiveLayer].pFont->Width + 7) / 8)]);
 }
 
@@ -1016,7 +1019,8 @@ void BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
   *            @arg  RIGHT_MODE
   *            @arg  LEFT_MODE
   */
-void BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode)
+uint32_t addr;
+void BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode, uint8_t background)
 {
   uint16_t refcolumn = 1, i = 0;
   uint32_t size = 0, xsize = 0;
@@ -1057,20 +1061,24 @@ void BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_A
   {
     refcolumn = 1;
   }
-
   /* Send the string character by character on LCD */
   while ((*Text != 0) & (((BSP_LCD_GetXSize() - (i*DrawProp[ActiveLayer].pFont->Width)) & 0xFFFF) >= DrawProp[ActiveLayer].pFont->Width))
   {
     /* Display one character on LCD */
-    BSP_LCD_DisplayChar(refcolumn, Ypos, *Text);
+    BSP_LCD_DisplayChar(refcolumn, Ypos, *Text, background);
+		//BSP_LCD_DrawRect(refcolumn, Ypos,DrawProp[ActiveLayer].pFont->Width,DrawProp[ActiveLayer].pFont->Height);
     /* Decrement the column position by 16 */
-    refcolumn += DrawProp[ActiveLayer].pFont->Width;
+		
+		//changed for russian fonts
+    //refcolumn += DrawProp[ActiveLayer].pFont->Width;
+		//refcolumn += 28; for 48
+		refcolumn += DrawProp[ActiveLayer].pFont->Height * 0.58;//experimental
+		//18
 
     /* Point on the next character */
     Text++;
     i++;
   }
-
 }
 
 /**
@@ -1080,7 +1088,7 @@ void BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_A
   */
 void BSP_LCD_DisplayStringAtLine(uint16_t Line, uint8_t *ptr)
 {
-  BSP_LCD_DisplayStringAt(0, LINE(Line), ptr, LEFT_MODE);
+  BSP_LCD_DisplayStringAt(0, LINE(Line), ptr, LEFT_MODE, 1);
 }
 
 /**
@@ -1742,7 +1750,7 @@ void BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t RGB_Code)
   * @param  Ypos: Start column address
   * @param  c: Pointer to the character data
   */
-static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
+static void DrawChar(uint16_t Xpos, uint16_t Ypos, uint8_t background, const uint8_t *c)
 {
   uint32_t i = 0, j = 0;
   uint16_t height, width;
@@ -1753,12 +1761,22 @@ static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
   height = DrawProp[ActiveLayer].pFont->Height;
   width  = DrawProp[ActiveLayer].pFont->Width;
 
+	
   offset =  8 *((width + 7)/8) -  width ;
+	
+	//offset-=2;
 
   for(i = 0; i < height; i++)
   {
     pchar = ((uint8_t *)c + (width + 7)/8 * i);
 
+		int bytes = ((width + 7)/8);
+		line = 0;
+		for (int i = 0; i < bytes; i++) {
+    line <<= 8;
+    line |= pchar[i];
+	}
+		/*
     switch(((width + 7)/8))
     {
 
@@ -1774,7 +1792,7 @@ static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
     default:
       line =  (pchar[0]<< 16) | (pchar[1]<< 8) | pchar[2];
       break;
-    }
+    }*/
 
     for (j = 0; j < width; j++)
     {
@@ -1784,7 +1802,7 @@ static void DrawChar(uint16_t Xpos, uint16_t Ypos, const uint8_t *c)
       }
       else
       {
-        BSP_LCD_DrawPixel((Xpos + j), Ypos, DrawProp[ActiveLayer].BackColor);
+				if(background==1) BSP_LCD_DrawPixel((Xpos + j), Ypos, DrawProp[ActiveLayer].BackColor);
       }
     }
     Ypos++;

@@ -2,7 +2,7 @@ Dependencies for Project 'rubbish', Target 'rubbish': (DO NOT MODIFY !)
 CompilerVersion: 5060750::V5.06 update 6 (build 750)::ARMCC
 F (startup_stm32f769xx.s)(0x5E206B43)(--cpu Cortex-M7.fp.dp -g --apcs=interwork --pd "__MICROLIB SETA 1" -I ..\\Inc -I ..\Inc-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include--pd "__UVISION_VERSION SETA 529" --pd "_RTE_ SETA 1" --pd "STM32F769xx SETA 1"--list startup_stm32f769xx.lst --xref -o rubbish\startup_stm32f769xx.o --depend rubbish\startup_stm32f769xx.d)
 F (..\Inc\stm32f769i_discovery.h)(0x5E28124B)()
-F (..\Inc\stm32f769i_discovery_lcd.h)(0x5E1CDA7E)()
+F (..\Inc\stm32f769i_discovery_lcd.h)(0x5E43FCAE)()
 F (..\Inc\stm32f769i_discovery_sdram.h)(0x5C5C0BAA)()
 F (..\Src\stm32f769i_discovery.c)(0x5C5C0BAA)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f769i_discovery.o --omf_browse rubbish\stm32f769i_discovery.crf --depend rubbish\stm32f769i_discovery.d)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
@@ -46,8 +46,8 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_sd.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h)(0x5E01D841)
-F (..\Src\stm32f769i_discovery_lcd.c)(0x5E1CDBDC)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f769i_discovery_lcd.o --omf_browse rubbish\stm32f769i_discovery_lcd.crf --depend rubbish\stm32f769i_discovery_lcd.d)
-I (../Inc/stm32f769i_discovery_lcd.h)(0x5E1CDA7E)
+F (..\Src\stm32f769i_discovery_lcd.c)(0x5E4549F7)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f769i_discovery_lcd.o --omf_browse rubbish\stm32f769i_discovery_lcd.crf --depend rubbish\stm32f769i_discovery_lcd.d)
+I (../Inc/stm32f769i_discovery_lcd.h)(0x5E43FCAE)
 I (../Inc/../Components/otm8009a/otm8009a.h)(0x5C5C0B8D)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5D9B1868)
 I (../Inc/../Components/adv7533/adv7533.h)(0x5C5C0B76)
@@ -93,13 +93,16 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h)(0x5E01D841)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
-I (../Inc/../Fonts/fonts.h)(0x5C5C0BE1)
+I (../Inc/../Fonts/fonts.h)(0x5E44144B)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5D9B1868)
 I (..\Src\../Fonts/font24.c)(0x5C5C0BE1)
 I (..\Src\../Fonts/font20.c)(0x5C5C0BE1)
 I (..\Src\../Fonts/font16.c)(0x5C5C0BE1)
 I (..\Src\../Fonts/font12.c)(0x5C5C0BE1)
+I (..\Src\../Fonts/rus24.c)(0x5E4528A0)
+I (..\Src\../Fonts/bahn24.c)(0x5E440B13)
 I (..\Src\../Fonts/font8.c)(0x5C5C0BE1)
+I (..\Src\../Fonts/rus48.c)(0x5E452A3C)
 F (..\Src\stm32f769i_discovery_sdram.c)(0x5C5C0BAA)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f769i_discovery_sdram.o --omf_browse rubbish\stm32f769i_discovery_sdram.crf --depend rubbish\stm32f769i_discovery_sdram.d)
 I (../Inc/stm32f769i_discovery_sdram.h)(0x5C5C0BAA)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5E01D841)
@@ -146,8 +149,8 @@ F (..\Components\otm8009a\otm8009a.c)(0x5C5C0B8D)(--c99 -c --cpu Cortex-M7.fp.dp
 I (..\Components\otm8009a\otm8009a.h)(0x5C5C0B8D)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5D9B1868)
 F (..\Components\otm8009a\otm8009a.h)(0x5C5C0B8D)()
-F (.\gui.c)(0x5E42C13E)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\gui.o --omf_browse rubbish\gui.crf --depend rubbish\gui.d)
-I (gui.h)(0x5E42C13E)
+F (.\gui.c)(0x5E453D4F)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\gui.o --omf_browse rubbish\gui.crf --depend rubbish\gui.d)
+I (gui.h)(0x5E451DB8)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5E01D841)
 I (../Inc/stm32f7xx_hal_conf.h)(0x5E206B41)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h)(0x5E01D841)
@@ -213,19 +216,19 @@ I (../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h)(0x5E01D844)
 I (../Middlewares/Third_Party/FatFs/src/diskio.h)(0x5E01D844)
 I (../Inc/sd_diskio.h)(0x5E206B40)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5D9B186A)
-I (../Inc/stm32f769i_discovery_lcd.h)(0x5E1CDA7E)
+I (../Inc/stm32f769i_discovery_lcd.h)(0x5E43FCAE)
 I (../Inc/../Components/otm8009a/otm8009a.h)(0x5C5C0B8D)
 I (../Inc/../Components/adv7533/adv7533.h)(0x5C5C0B76)
 I (../Inc/../Components/adv7533/../Common/audio.h)(0x5C5C0B74)
 I (../Inc/stm32f769i_discovery_sdram.h)(0x5C5C0BAA)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
-I (../Inc/../Fonts/fonts.h)(0x5C5C0BE1)
+I (../Inc/../Fonts/fonts.h)(0x5E44144B)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5D9B1868)
 I (../Inc/stm32f769i_discovery_ts.h)(0x5E01D83A)
 I (../Inc/../Components/ft6x06/ft6x06.h)(0x5E2067AD)
 I (../Inc/../Components/ft6x06/../Common/ts.h)(0x5C5C0B74)
 I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5D9B186A)
-F (.\gui.h)(0x5E42C13E)()
+F (.\gui.h)(0x5E451DB8)()
 F (..\Inc\stm32f769i_discovery_ts.h)(0x5E01D83A)()
 F (..\Src\stm32f769i_discovery_ts.c)(0x5E01D83A)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f769i_discovery_ts.o --omf_browse rubbish\stm32f769i_discovery_ts.crf --depend rubbish\stm32f769i_discovery_ts.d)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
@@ -270,12 +273,12 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h)(0x5E01D841)
 I (../Inc/stm32f769i_discovery_ts.h)(0x5E01D83A)
-I (../Inc/stm32f769i_discovery_lcd.h)(0x5E1CDA7E)
+I (../Inc/stm32f769i_discovery_lcd.h)(0x5E43FCAE)
 I (../Inc/../Components/otm8009a/otm8009a.h)(0x5C5C0B8D)
 I (../Inc/../Components/adv7533/adv7533.h)(0x5C5C0B76)
 I (../Inc/../Components/adv7533/../Common/audio.h)(0x5C5C0B74)
 I (../Inc/stm32f769i_discovery_sdram.h)(0x5C5C0BAA)
-I (../Inc/../Fonts/fonts.h)(0x5C5C0BE1)
+I (../Inc/../Fonts/fonts.h)(0x5E44144B)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5D9B1868)
 I (../Inc/../Components/ft6x06/ft6x06.h)(0x5E2067AD)
 I (../Inc/../Components/ft6x06/../Common/ts.h)(0x5C5C0B74)
@@ -284,7 +287,7 @@ I (..\Components\ft6x06\ft6x06.h)(0x5E2067AD)
 I (..\Components\ft6x06\../Common/ts.h)(0x5C5C0B74)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5D9B1868)
 F (..\Components\ft6x06\ft6x06.h)(0x5E2067AD)()
-F (../Src/main.c)(0x5E428405)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\main.o --omf_browse rubbish\main.crf --depend rubbish\main.d)
+F (../Src/main.c)(0x5E455128)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\main.o --omf_browse rubbish\main.crf --depend rubbish\main.d)
 I (../Inc/main.h)(0x5E2590AC)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5E01D841)
 I (../Inc/stm32f7xx_hal_conf.h)(0x5E206B41)
@@ -349,19 +352,20 @@ I (../Inc/fatfs_platform.h)(0x5E206B40)
 I (../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h)(0x5E01D844)
 I (../Middlewares/Third_Party/FatFs/src/diskio.h)(0x5E01D844)
 I (../Inc/sd_diskio.h)(0x5E206B40)
-I (../Inc/stm32f769i_discovery_lcd.h)(0x5E1CDA7E)
+I (../Inc/stm32f769i_discovery_lcd.h)(0x5E43FCAE)
 I (../Inc/../Components/otm8009a/otm8009a.h)(0x5C5C0B8D)
 I (../Inc/../Components/adv7533/adv7533.h)(0x5C5C0B76)
 I (../Inc/../Components/adv7533/../Common/audio.h)(0x5C5C0B74)
 I (../Inc/stm32f769i_discovery_sdram.h)(0x5C5C0BAA)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
-I (../Inc/../Fonts/fonts.h)(0x5C5C0BE1)
+I (../Inc/../Fonts/fonts.h)(0x5E44144B)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5D9B1868)
 I (../Inc/stm32f769i_discovery_ts.h)(0x5E01D83A)
 I (../Inc/../Components/ft6x06/ft6x06.h)(0x5E2067AD)
 I (../Inc/../Components/ft6x06/../Common/ts.h)(0x5C5C0B74)
-I (..\MDK-ARM\gui.h)(0x5E42C13E)
+I (..\MDK-ARM\gui.h)(0x5E451DB8)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5D9B186A)
+I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5D9B186A)
 F (../Src/bsp_driver_sd.c)(0x5E428393)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\bsp_driver_sd.o --omf_browse rubbish\bsp_driver_sd.crf --depend rubbish\bsp_driver_sd.d)
 I (../Inc/bsp_driver_sd.h)(0x5E428393)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5E01D841)
@@ -576,7 +580,7 @@ I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_sd.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h)(0x5E01D841)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h)(0x5E01D841)
-F (../Src/freertos.c)(0x5E42C4C0)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\freertos.o --omf_browse rubbish\freertos.crf --depend rubbish\freertos.d)
+F (../Src/freertos.c)(0x5E4551ED)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\freertos.o --omf_browse rubbish\freertos.crf --depend rubbish\freertos.d)
 I (../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h)(0x5E01D844)
 I (C:\Keil_v5\ARM\ARMCC\include\stddef.h)(0x5D9B1868)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5D9B1868)
@@ -632,7 +636,7 @@ I (../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h)(0x5E01D845)
 I (../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h)(0x5E01D845)
 I (../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h)(0x5E01D845)
 I (../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h)(0x5E01D844)
-I (..\MDK-ARM\gui.h)(0x5E42C13E)
+I (..\MDK-ARM\gui.h)(0x5E451DB8)
 I (../Inc/fatfs.h)(0x5E206B40)
 I (../Middlewares/Third_Party/FatFs/src/ff.h)(0x5E01D844)
 I (../Middlewares/Third_Party/FatFs/src/integer.h)(0x5E01D844)
@@ -643,15 +647,16 @@ I (../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h)(0x5E01D844)
 I (../Middlewares/Third_Party/FatFs/src/diskio.h)(0x5E01D844)
 I (../Inc/sd_diskio.h)(0x5E206B40)
 I (C:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x5D9B186A)
-I (../Inc/stm32f769i_discovery_lcd.h)(0x5E1CDA7E)
+I (../Inc/stm32f769i_discovery_lcd.h)(0x5E43FCAE)
 I (../Inc/../Components/otm8009a/otm8009a.h)(0x5C5C0B8D)
 I (../Inc/../Components/adv7533/adv7533.h)(0x5C5C0B76)
 I (../Inc/../Components/adv7533/../Common/audio.h)(0x5C5C0B74)
 I (../Inc/stm32f769i_discovery_sdram.h)(0x5C5C0BAA)
 I (../Inc/stm32f769i_discovery.h)(0x5E28124B)
-I (../Inc/../Fonts/fonts.h)(0x5C5C0BE1)
+I (../Inc/../Fonts/fonts.h)(0x5E44144B)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5D9B1868)
 I (C:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x5D9B186A)
+I (C:\Keil_v5\ARM\ARMCC\include\locale.h)(0x5D9B1862)
 F (../Src/stm32f7xx_it.c)(0x5E42C4C0)(--c99 -c --cpu Cortex-M7.fp.dp -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc -I ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy -I ../Middlewares/Third_Party/FatFs/src -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1 -I ../Drivers/CMSIS/Device/ST/STM32F7xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM-I.\RTE\_rubbish-IC:\Users\user\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include-IC:\Users\user\AppData\Local\Arm\Packs\Keil\STM32F7xx_DFP\2.12.0\Drivers\CMSIS\Device\ST\STM32F7xx\Include-D__UVISION_VERSION="529" -D_RTE_ -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx -DUSE_HAL_DRIVER -DSTM32F769xx-o rubbish\stm32f7xx_it.o --omf_browse rubbish\stm32f7xx_it.crf --depend rubbish\stm32f7xx_it.d)
 I (../Inc/main.h)(0x5E2590AC)
 I (../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h)(0x5E01D841)

@@ -25,3 +25,4 @@ void DrawPercents(void);
 void PrintFullness(uint8_t container,uint8_t perc);
 void get_touch_pos(uint16_t *x, uint16_t *y);
 void print_touch_pos(uint16_t x, uint16_t y);
+uint8_t LoadImagesFromSdToRAM(void);
