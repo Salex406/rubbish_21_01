@@ -124,7 +124,7 @@ void StartDefaultTask(void const * argument)
 	uint8_t i=0, j=0, k=0;
   for(;;)
   {
-		if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0) == GPIO_PIN_SET)
+		if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0) == GPIO_PIN_SET && CurrentScreen == MAIN)
 		{
 			//Touchscreen_Handle_NewTouch();
 			//LCD_DrawBitmap(0,0,(uint8_t *)screens[0].location);
@@ -133,7 +133,7 @@ void StartDefaultTask(void const * argument)
 			placePrBar(166,446,168,98,i,PROGRESSBAR_VERTICAL,0xFF00b800);
 			placePrBar(350,446,168,98,j,PROGRESSBAR_VERTICAL,LCD_COLOR_YELLOW);
 			placePrBar(536,446,168,98,k,PROGRESSBAR_VERTICAL,LCD_COLOR_BLUE);
-			osDelay(10);
+			osDelay(5);
 			DrawPercents();
 			osDelay(5);
 			PrintFullness(1,i);
@@ -167,8 +167,13 @@ void ScreensDrawer(void const * argument)
 				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
 				DMA2D_DrawImage((uint32_t)images[1].location, RightButtonX, BottomButtonY, 120, 120);
 				DMA2D_DrawImage((uint32_t)images[2].location, LeftButtonX, BottomButtonY, 120, 120);
-				DMA2D_DrawImage((uint32_t)images[3].location, RightButtonX, TopButtonY, 120, 120);
+				//DMA2D_DrawImage((uint32_t)images[3].location, RightButtonX, TopButtonY, 120, 120);
 				DMA2D_DrawImage((uint32_t)images[16].location, 126, 70, 540, 400);
+				
+				placePrBar(166,446,168,98,0,PROGRESSBAR_VERTICAL,0xFF00b800);
+				placePrBar(350,446,168,98,0,PROGRESSBAR_VERTICAL,LCD_COLOR_YELLOW);
+				placePrBar(536,446,168,98,0,PROGRESSBAR_VERTICAL,LCD_COLOR_BLUE);
+				
 				osDelay(10);
 				PrintFullness(1,0);
 				osDelay(5);
@@ -185,25 +190,69 @@ void ScreensDrawer(void const * argument)
 			BSP_LCD_SetFont(&rus48);
 			//setlocale(LC_ALL, "RU");
 			//sprintf((char*)lcd_string, "абвгдеёжзийклмнопрстуфхцчшщъыьэюя");
-			sprintf((char*)lcd_string, "ABCDEFGHIJKLMNOP");
-			BSP_LCD_DisplayStringAt(0, 10, lcd_string, LEFT_MODE,0);
-			sprintf((char*)lcd_string, "QRSTUVWXYZ[\]^_`a");
-			BSP_LCD_DisplayStringAt(0, 45, lcd_string, LEFT_MODE,0);
+			BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+			sprintf((char*)lcd_string, "rMASTJL");
+			BSP_LCD_DisplayStringAt(130, 15, lcd_string, LEFT_MODE,0);
+			
+			sprintf((char*)lcd_string, "tTFLMP");
+			BSP_LCD_DisplayStringAt(330, 15, lcd_string, LEFT_MODE,0);
+			
+			sprintf((char*)lcd_string, "oFTAMM");
+			BSP_LCD_DisplayStringAt(503, 15, lcd_string, LEFT_MODE,0);
+			//sprintf((char*)lcd_string, "QRSTUVWXYZ[\]^_`a");
+			//BSP_LCD_DisplayStringAt(0, 45, lcd_string, LEFT_MODE,0);
 			}
 			
-			if(msg==SETTINGS)
+			else if(msg==SETTINGS)
 			{
 				//settings screen
 				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
 				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
 				
-				uint8_t lcd_string[40] = "";
+				uint8_t lcd_string[10] = "";
 				sprintf((char*)lcd_string,"pASTRPKLJ");
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
 				BSP_LCD_SetFont(&rus48);
 				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				
+				sprintf((char*)lcd_string, "ABCDEFGHIJKLMNOP");
+				BSP_LCD_DisplayStringAt(200, 100, lcd_string, LEFT_MODE,0);
+				sprintf((char*)lcd_string, "QRSTUVWXYZ[\]^_`a");
+				BSP_LCD_DisplayStringAt(200, 135, lcd_string, LEFT_MODE,0);
+				
 				osDelay(10);
 				CurrentScreen = SETTINGS;
+				
+				//BSP_LCD_DrawCircle(750,10,40);
+			}
+			
+			else if(msg==CALL)
+			{
+				//call screen
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				uint8_t lcd_string[10] = "";
+				sprintf((char*)lcd_string,"rPEEFRHLA");
+				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+				BSP_LCD_SetFont(&rus48);
+				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				osDelay(10);
+				CurrentScreen = CALL;
+			}
+			else if(msg==HELP)
+			{
+				//help screen
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				uint8_t lcd_string[10] = "";
+				sprintf((char*)lcd_string,"rPNP[^");
+				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+				BSP_LCD_SetFont(&rus48);
+				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				osDelay(10);
+				CurrentScreen = HELP;
 			}
 			
 		}
@@ -215,6 +264,8 @@ void StartTouchTask(void const * argument)
 {
   /* Infinite loop */
 	osEvent event;
+	uint8_t lcd_string[60] = "";
+	Screen screenToLoad;
   for(;;)
   {
 		event = osMessageGet(TOUCH_Queue, 100);
@@ -224,53 +275,78 @@ void StartTouchTask(void const * argument)
 			uint16_t x = -1, y = -1;
 			get_touch_pos(&x, &y);
 			print_touch_pos(x, y);
-			uint8_t lcd_string[60] = "";
-			BSP_LCD_SetFont(&Font20);
-			if(x > 0 && x < 115 && y > 0 && y < 115)
-			{
-				//left top button
-				sprintf((char*)lcd_string, "left top");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
-				Screen screenToLoad;
-				switch(CurrentScreen){
+			switch(CurrentScreen){
 					case SETTINGS: 
-						screenToLoad = MAIN;
-						xQueueSend(gui_msg_q, &screenToLoad, 0);
+						//actions for SETTINGS SCREEN
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							//sprintf((char*)lcd_string, "left top");
+							//BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						break;
+					case MAIN:
+						/*if(x > 700 && y < 115)
+						{
+							//right top button
+							sprintf((char*)lcd_string, "right top");
+							BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+							screenToLoad = CALL;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}*/
+						if(x > 700 && y > 320)
+						{
+								//right bottom button
+								sprintf((char*)lcd_string, "right bottom");
+								BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+								screenToLoad = HELP;
+								xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						else if(x < 115 && y > 320)
+						{
+								//left bottom button
+								sprintf((char*)lcd_string, "left bottom");
+								BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+								screenToLoad = SETTINGS;
+								xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						break;
+					
+					case CALL:
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						break;
+					
+					case HELP:
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						break;
+					
+					case FIRST_BIN:
+						
+						break;
+					
+					case SECOND_BIN:
+						
+						break;
+					case THIRD_BIN:
+						
 						break;
 					default:
 						break;
-			}
-			}
-			else if(x > 700 && y < 115)
-			{
-				//right top button
-				sprintf((char*)lcd_string, "right top");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
-			}
-			else if(x < 115 && y > 320)
-			{
-				//left bottom button
-				sprintf((char*)lcd_string, "left bottom");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
-				Screen screenToLoad;
-				switch(CurrentScreen){
-					case MAIN: 
-						screenToLoad = SETTINGS;
-						xQueueSend(gui_msg_q, &screenToLoad, 0);
-						break;
-					default:
-						break;
-			}
-			}
-			else if(x > 700 && y > 320)
-			{
-				//right bottom button
-				sprintf((char*)lcd_string, "right bottom");
-				BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
-			
-		}
+				}
 	}
-    osDelay(50);
+    osDelay(30);
   }
 }
 /* USER CODE END Application */

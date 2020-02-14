@@ -106,7 +106,7 @@ uint8_t LoadImagesFromSdToRAM()
 			
 				//load image to RAM from .bmp file
 				uint8_t res = OpenBMP((uint8_t *)images[0].location,images[0].filename);
-				if(res==1){ BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE, 1); Error_Handler();}
+				if(res==1){ TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE, 1); Error_Handler();}
 				pr+=step;
 				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
 				
@@ -116,6 +116,7 @@ uint8_t LoadImagesFromSdToRAM()
 					res = ReadImage(images[i].location,images[i].filename);
 					if(res==1)
 					{
+						TFT_FillScreen(LCD_COLOR_WHITE);
 						char* error_str;
 						sprintf(error_str,"File %d open error. Pls reboot and check SD card.",i+1);
 						Error_Handler();
@@ -124,9 +125,9 @@ uint8_t LoadImagesFromSdToRAM()
 						placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
 				}
 		}
-		else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD mount error",CENTER_MODE, 1); Error_Handler();}
+		else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"qZJBLA LART] QANaTJ",CENTER_MODE, 1); Error_Handler();}
 	}
-	else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD is not connected",CENTER_MODE, 1); Error_Handler();}
+	else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(30,240,(uint8_t*)"qTSUTSTCUFT LARTA QANaTJ",CENTER_MODE, 1); Error_Handler();}
 	return 0;
 }
 
