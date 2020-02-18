@@ -53,9 +53,7 @@ typedef enum {
     SETTINGS,        //1
     CALL,    //2
     HELP,      //3
-    FIRST_BIN,      //4
-		SECOND_BIN,//5
-		THIRD_BIN//6
+    DOOR_OPEN
 }Screen;
 
 extern const uint16_t RightButtonX;
@@ -108,14 +106,25 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+
+void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                    signed char *pcTaskName ){
+																			
+		while(1){}																	
+}
+
+
 void StartBlinkTask(void const * argument)
 {
   for(;;)
   {
+
 		HAL_GPIO_TogglePin(GPIOJ,GPIO_PIN_5);
     osDelay(800);
   }
 }
+
+
 
 void StartDefaultTask(void const * argument)
 {
@@ -124,7 +133,9 @@ void StartDefaultTask(void const * argument)
 	uint8_t i=0, j=0, k=0;
   for(;;)
   {
-		if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0) == GPIO_PIN_SET && CurrentScreen == MAIN)
+		//HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0)
+		/*
+		if(CurrentScreen == 26)
 		{
 			//Touchscreen_Handle_NewTouch();
 			//LCD_DrawBitmap(0,0,(uint8_t *)screens[0].location);
@@ -150,7 +161,9 @@ void StartDefaultTask(void const * argument)
 			osDelay(200);
 		}
     osDelay(80);
-		}
+		}*/
+		osDelay(1000);
+	}
 }
 
 void ScreensDrawer(void const * argument)
@@ -161,6 +174,7 @@ void ScreensDrawer(void const * argument)
 		uint8_t msg = 15;
 		if (xQueueReceive(gui_msg_q, &msg, 0) == pdTRUE)
 		{
+			EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos); //disable interrupts
 			if(msg==MAIN)
 			{
 				//main screen
@@ -170,7 +184,7 @@ void ScreensDrawer(void const * argument)
 				//DMA2D_DrawImage((uint32_t)images[3].location, RightButtonX, TopButtonY, 120, 120);
 				DMA2D_DrawImage((uint32_t)images[16].location, 126, 70, 540, 400);
 				
-				placePrBar(166,446,168,98,0,PROGRESSBAR_VERTICAL,0xFF00b800);
+				placePrBar(166,446,168,98,0,PROGRESSBAR_VERTICAL,LCD_COLOR_GREENCONTAINER);
 				placePrBar(350,446,168,98,0,PROGRESSBAR_VERTICAL,LCD_COLOR_YELLOW);
 				placePrBar(536,446,168,98,0,PROGRESSBAR_VERTICAL,LCD_COLOR_BLUE);
 				
@@ -254,9 +268,27 @@ void ScreensDrawer(void const * argument)
 				osDelay(10);
 				CurrentScreen = HELP;
 			}
+			else if(msg==DOOR_OPEN)
+			{
+				//help screen
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				uint8_t lcd_string[10] = "";
+				sprintf((char*)lcd_string,"qTLR]TA ECFRXA");
+				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+				BSP_LCD_SetFont(&rus48);
+				BSP_LCD_DisplayStringAt(0, 50, lcd_string, CENTER_MODE, 0);
+				
+				sprintf((char*)lcd_string,"{TRJWLPE:");
+				BSP_LCD_DisplayStringAt(0, 96, lcd_string, CENTER_MODE, 0);
+				osDelay(10);
+				CurrentScreen = DOOR_OPEN;
+			}
 			
 		}
-    osDelay(400);
+    osDelay(100);
+		EXTI->IMR=(1<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos);
   }
 }
 
@@ -272,7 +304,8 @@ void StartTouchTask(void const * argument)
   	if (event.status == osEventMessage)
 		{
 			//HAL_GPIO_WritePin(GPIOJ,GPIO_PIN_13,GPIO_PIN_SET);
-			uint16_t x = -1, y = -1;
+			EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos);
+			uint16_t x = 10000, y = 10000;
 			get_touch_pos(&x, &y);
 			print_touch_pos(x, y);
 			switch(CurrentScreen){
@@ -296,7 +329,7 @@ void StartTouchTask(void const * argument)
 							screenToLoad = CALL;
 							xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}*/
-						if(x > 700 && y > 320)
+						if(x > 700 && y > 320 && x <= 800 && y <= 480)
 						{
 								//right bottom button
 								sprintf((char*)lcd_string, "right bottom");
@@ -304,7 +337,7 @@ void StartTouchTask(void const * argument)
 								screenToLoad = HELP;
 								xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}
-						else if(x < 115 && y > 320)
+						else if(x < 115 && y > 320 && y <=480)
 						{
 								//left bottom button
 								sprintf((char*)lcd_string, "left bottom");
@@ -331,22 +364,20 @@ void StartTouchTask(void const * argument)
 							xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}
 						break;
-					
-					case FIRST_BIN:
-						
-						break;
-					
-					case SECOND_BIN:
-						
-						break;
-					case THIRD_BIN:
-						
+					case DOOR_OPEN:
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
 						break;
 					default:
 						break;
 				}
+			EXTI->IMR=(1<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos);
 	}
-    osDelay(30);
+  osDelay(40);
   }
 }
 /* USER CODE END Application */

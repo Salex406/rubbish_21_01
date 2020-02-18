@@ -40,3 +40,5 @@ rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal
 rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h
 rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
+rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
+rubbish\stm32f7xx_hal_flash.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h

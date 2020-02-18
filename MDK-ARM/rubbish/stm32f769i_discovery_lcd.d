@@ -45,6 +45,8 @@ rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7x
 rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h
 rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
+rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
+rubbish\stm32f769i_discovery_lcd.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
 rubbish\stm32f769i_discovery_lcd.o: ../Inc/stm32f769i_discovery.h
 rubbish\stm32f769i_discovery_lcd.o: ../Inc/../Fonts/fonts.h
 rubbish\stm32f769i_discovery_lcd.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

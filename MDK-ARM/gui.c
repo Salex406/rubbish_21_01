@@ -4,7 +4,7 @@
 #include "stm32f769i_discovery_ts.h"
 #include "stdio.h"
 
-
+#include "../Components/ft6x06/ft6x06.h"
 
 struct Image
 {
@@ -162,6 +162,7 @@ void TFT_FillScreen(uint32_t color)
     }
   }
 }
+
 
 //place progress bar (horisontal or vertical)
 void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t progress,uint8_t type,uint32_t color)
@@ -649,7 +650,7 @@ void DrawPercents()
 void get_touch_pos(uint16_t *x, uint16_t *y)
 {
 	TS_StateTypeDef  TS_State = {0};
-	BSP_TS_GetState(&TS_State);
+	BSP_TS_GetState_mod(&TS_State);
 	*x = TS_State.touchX[0];
 	*y = TS_State.touchY[0];
 }
@@ -665,3 +666,4 @@ void print_touch_pos(uint16_t x, uint16_t y)
       BSP_LCD_SetFont(&Font12);
       BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE, 1);
 }
+

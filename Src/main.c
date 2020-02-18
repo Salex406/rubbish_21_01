@@ -38,9 +38,7 @@ typedef enum {
     SETTINGS,        //1
     CALL,    //2
     HELP,      //3
-    FIRST_BIN,      //4
-		SECOND_BIN,//5
-		THIRD_BIN//6
+    DOOR_OPEN
 }Screen;
 
 const uint8_t NumberOfOdjectsToLoadFromSD = 17;
@@ -111,6 +109,8 @@ LTDC_HandleTypeDef hltdc;
 
 SD_HandleTypeDef hsd2;
 
+UART_HandleTypeDef huart1;
+
 SDRAM_HandleTypeDef hsdram1;
 
 osThreadId defaultTaskHandle;
@@ -130,7 +130,8 @@ static void MX_I2C1_Init(void);
 static void MX_LTDC_Init(void);
 static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
-extern void StartDefaultTask(void const * argument);
+static void MX_USART1_UART_Init(void);
+void StartDefaultTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 extern void StartBlinkTask(void const * argument);
@@ -141,7 +142,7 @@ extern void StartTouchTask(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/* USERCODE END 0 */
+/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -150,8 +151,10 @@ extern void StartTouchTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(0<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 1 */
   
+
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
 
@@ -182,7 +185,7 @@ int main(void)
   MX_SDMMC2_SD_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
-	
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 	strcpy(images[0].filename, "m_scr_v2.bmp");
 	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
@@ -219,15 +222,7 @@ int main(void)
 	strcpy(images[14].name, "n_9");
 	strcpy(images[15].name, "n_perc");
 	strcpy(images[16].name, "i_cont");
-	//1 screen is 0x119800
-	//1 icon is 1fc00
-	//1 big_num is 6c00
-	
-	//0 - main
-	//1 - help icon
-	//2 - settings icon
-	//3 - call icon
-	//4 - back icon
+
 	images[0].location = (uint32_t *)0xC0300000;
 	images[1].location = (uint32_t *)0xC0419800;//0xC0410800;
 	images[2].location = (uint32_t *)0xC0439400;
@@ -257,7 +252,7 @@ int main(void)
 
 	//draw main screen
 	Screen screenToLoad = MAIN;
-	gui_msg_q = xQueueGenericCreate(1, 1, 0);
+	gui_msg_q = xQueueCreate(1, sizeof(Screen));
 	xQueueSend(gui_msg_q, &screenToLoad, 0);
 	
 	//init touchscreen
@@ -266,6 +261,12 @@ int main(void)
 	osMessageQDef(touch_Queue, 1, uint8_t);
   TOUCH_Queue = osMessageCreate(osMessageQ(touch_Queue), NULL);
 	
+	EXTI->IMR=(1<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos);
+	
+	uint8_t uart_str[20];
+	sprintf((char*)uart_str,"Start");
+	HAL_UART_Transmit(&huart1,uart_str,5,100);
+	//EXTI->IMR=(1<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -286,7 +287,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1280);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -297,11 +298,11 @@ int main(void)
   blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
 	
 	/* definition and creation of drawTask */
-  osThreadDef(drawTask, ScreensDrawer, osPriorityNormal, 0, 1280);
+  osThreadDef(drawTask, ScreensDrawer, osPriorityNormal, 0, 1024);
   drawTaskHandle = osThreadCreate(osThread(drawTask), NULL);
 	
 	/* definition and creation of touchTask */
-  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 128);
+  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1280);
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
@@ -344,7 +345,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 25;
   RCC_OscInitStruct.PLL.PLLN = 400;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 15;
+  RCC_OscInitStruct.PLL.PLLQ = 8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -368,14 +369,16 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_SDMMC2|RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_USART1
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
   PeriphClkInitStruct.PLLSAIDivQ = 1;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+  PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
@@ -717,6 +720,41 @@ static void MX_SDMMC2_SD_Init(void)
 
 }
 
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
 /* FMC initialization function */
 static void MX_FMC_Init(void)
 {
@@ -806,7 +844,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -824,7 +871,6 @@ static void MX_GPIO_Init(void)
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-
 
 
 /**
