@@ -7,6 +7,7 @@
 "rubbish\gui.o"
 "rubbish\stm32f769i_discovery_ts.o"
 "rubbish\ft6x06.o"
+"rubbish\scanercodes_gm66.o"
 "rubbish\main.o"
 "rubbish\bsp_driver_sd.o"
 "rubbish\sd_diskio.o"

@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F769xx,USE_HAL_DRIVER,STM32F769xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;      ../Drivers/STM32F7xx_HAL_Driver/Inc;      ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;      ../Middlewares/Third_Party/FatFs/src;      ../Middlewares/Third_Party/FreeRTOS/Source/include;      ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;      ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;      ../Drivers/CMSIS/Device/ST/STM32F7xx/Include;      ../Drivers/CMSIS/Include;      ..\MDK-ARM</IncludePath>
+              <IncludePath>../Inc;           ../Drivers/STM32F7xx_HAL_Driver/Inc;           ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;           ../Middlewares/Third_Party/FatFs/src;           ../Middlewares/Third_Party/FreeRTOS/Source/include;           ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;           ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;           ../Drivers/CMSIS/Device/ST/STM32F7xx/Include;           ../Drivers/CMSIS/Include;           ..\MDK-ARM</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -466,6 +466,16 @@
               <FileName>Image_.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Inc\Image_.h</FilePath>
+            </File>
+            <File>
+              <FileName>ScanerCodes_GM66.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\ScanerCodes_GM66.c</FilePath>
+            </File>
+            <File>
+              <FileName>ScanerCodes_GM66.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\ScanerCodes_GM66.h</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>

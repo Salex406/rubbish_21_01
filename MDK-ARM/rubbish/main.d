@@ -81,3 +81,4 @@ rubbish\main.o: ../Inc/../Components/ft6x06/../Common/ts.h
 rubbish\main.o: ..\MDK-ARM\gui.h
 rubbish\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
 rubbish\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+rubbish\main.o: ../Inc/ScanerCodes_GM66.h

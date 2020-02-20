@@ -32,20 +32,32 @@
 #include "gui.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "ScanerCodes_GM66.h"
+
 
 typedef enum {
     MAIN,        //0
     SETTINGS,        //1
     CALL,    //2
     HELP,      //3
-    DOOR_OPEN
+    DOOR_OPEN,
+		PRESSING
 }Screen;
 
-const uint8_t NumberOfOdjectsToLoadFromSD = 17;
+const uint8_t NumberOfOdjectsToLoadFromSD = 20;
 const uint16_t LoadProgressBarPosY = 285;
 const uint16_t LoadProgressBarPosX = 228;
 const uint16_t LoadProgressBarLength = 260;
 const uint8_t LoadProgressBarWidth = 35;
+
+const uint16_t ContainerBottomX = 126;
+const uint16_t ContainerBottomY = 210;
+const uint16_t ContainerFlapsY = ContainerBottomY - 143;
+const uint16_t ContainerYellowFlapX = 325;
+const uint16_t ContainerGreenFlapX = 146;
+const uint16_t ContainerBlueFlapX = 502;
+const uint16_t NumOnContainerY = 120;
+
 const uint8_t DistanceBetweenStrings48 = 35;
 
 const uint16_t RightButtonX = 670;
@@ -73,7 +85,7 @@ struct Image
 	uint32_t* location;
 };
 
-struct Image images[17];
+struct Image images[20];
 //0 - main
 //1 - help icon
 //2 - settings icon
@@ -110,11 +122,14 @@ LTDC_HandleTypeDef hltdc;
 SD_HandleTypeDef hsd2;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart6;
 
 SDRAM_HandleTypeDef hsdram1;
 
-osThreadId defaultTaskHandle;
+
 /* USER CODE BEGIN PV */
+TaskHandle_t xScanTaskHandle = NULL;
+osThreadId scanTaskHandle;
 osThreadId blinkTaskHandle;
 osThreadId drawTaskHandle;
 osThreadId touchTaskHandle;
@@ -131,7 +146,8 @@ static void MX_LTDC_Init(void);
 static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART1_UART_Init(void);
-void StartDefaultTask(void const * argument);
+static void MX_USART6_UART_Init(void);
+void StartScanTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 extern void StartBlinkTask(void const * argument);
@@ -151,7 +167,7 @@ extern void StartTouchTask(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(0<<EXTI_EMR_MR0_Pos);
+	//EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(0<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 1 */
   
 
@@ -186,6 +202,7 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_USART1_UART_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 	strcpy(images[0].filename, "m_scr_v2.bmp");
 	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
@@ -203,7 +220,10 @@ int main(void)
 	strcpy(images[13].filename, "8.h");
 	strcpy(images[14].filename, "9.h");
 	strcpy(images[15].filename, "perc.h");
-	strcpy(images[16].filename, "cont.h");
+	strcpy(images[16].filename, "cont_bot.h");
+	strcpy(images[17].filename, "flp_grn.h");
+	strcpy(images[18].filename, "flp_ylw.h");
+	strcpy(images[19].filename, "flp_blue.h");
 	
 	strcpy(images[0].name, "main");
 	strcpy(images[1].name, "i_help");
@@ -222,6 +242,9 @@ int main(void)
 	strcpy(images[14].name, "n_9");
 	strcpy(images[15].name, "n_perc");
 	strcpy(images[16].name, "i_cont");
+	strcpy(images[17].name, "i_fgreen");
+	strcpy(images[18].name, "i_fyellow");
+	strcpy(images[19].name, "i_fblue");
 
 	images[0].location = (uint32_t *)0xC0300000;
 	images[1].location = (uint32_t *)0xC0419800;//0xC0410800;
@@ -239,9 +262,12 @@ int main(void)
 	images[13].location = (uint32_t *)0xC04D5400;
 	images[14].location = (uint32_t *)0xC04DC000;
 	images[15].location = (uint32_t *)0xC04E2C00;
-	images[16].location = (uint32_t *)0xC04E9800; //containers
+	images[16].location = (uint32_t *)0xC04E4400; //container_bottom
+	images[17].location = (uint32_t *)0xC060F864; //green flap
+	images[18].location = (uint32_t *)0xC0643EE4; //yellow flap
+	images[19].location = (uint32_t *)0xC0678564; //blue flap
 																	//0xC1000000
-																	
+	
 	BSP_LCD_Init();
 	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
 	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
@@ -261,11 +287,10 @@ int main(void)
 	osMessageQDef(touch_Queue, 1, uint8_t);
   TOUCH_Queue = osMessageCreate(osMessageQ(touch_Queue), NULL);
 	
-	EXTI->IMR=(1<<EXTI_EMR_MR13_Pos)|(1<<EXTI_EMR_MR0_Pos);
-	
-	uint8_t uart_str[20];
+	/*uint8_t uart_str[20];
 	sprintf((char*)uart_str,"Start");
 	HAL_UART_Transmit(&huart1,uart_str,5,100);
+	*/
 	//EXTI->IMR=(1<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 2 */
 
@@ -287,11 +312,12 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+	
+	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 1280);
+  scanTaskHandle = osThreadCreate(osThread(scanTask), &xScanTaskHandle);
 	
 	/* definition and creation of blinkTask */
   osThreadDef(blinkTask, StartBlinkTask, osPriorityNormal, 0, 16);
@@ -305,12 +331,10 @@ int main(void)
   osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1280);
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
   /* USER CODE END RTOS_THREADS */
-
   /* Start scheduler */
   osKernelStart();
  
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -370,8 +394,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_USART1
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
-                              |RCC_PERIPHCLK_CLK48;
+                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_SDMMC2|RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -379,6 +403,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLLSAIDivQ = 1;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
@@ -755,6 +780,41 @@ static void MX_USART1_UART_Init(void)
 
 }
 
+/**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 9600;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart6.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
 /* FMC initialization function */
 static void MX_FMC_Init(void)
 {
@@ -821,6 +881,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOI_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_5, GPIO_PIN_RESET);
@@ -871,8 +932,6 @@ static void MX_GPIO_Init(void)
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-
-
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM1 interrupt took place, inside

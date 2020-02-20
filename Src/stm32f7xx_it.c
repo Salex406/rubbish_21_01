@@ -32,12 +32,15 @@ typedef enum {
     SETTINGS,        //1
     CALL,    //2
     HELP,      //3
-    DOOR_OPEN
+    DOOR_OPEN,
+		PRESSING
 }Screen;
 
 extern osMessageQId TOUCH_Queue;
 extern xQueueHandle gui_msg_q;
 Screen ScreenToLoad;
+extern uint8_t DoorScreenState;
+extern Screen CurrentScreen;
 /* USER CODE END Includes */
   
 /* Private typedef -----------------------------------------------------------*/
@@ -99,8 +102,10 @@ volatile uint32_t psr;/* Program status register. */
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim1;
-
+extern TaskHandle_t xScanTaskHandle;
+extern uint8_t ScanCMD;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -207,8 +212,27 @@ void DebugMon_Handler(void)
 void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
-	ScreenToLoad = DOOR_OPEN;
-	xQueueSendFromISR(gui_msg_q, &ScreenToLoad, 0);
+	//will detect level change on door button
+	if(DoorScreenState == 0 && CurrentScreen == MAIN)
+	{
+		ScreenToLoad = DOOR_OPEN;
+		xQueueSendFromISR(gui_msg_q, &ScreenToLoad, 0);
+	}
+	else if(DoorScreenState == 0 && CurrentScreen == DOOR_OPEN)
+	{
+		//vTaskSuspend(xScanTaskHandle);
+		ScreenToLoad = MAIN;
+		xQueueSendFromISR(gui_msg_q, &ScreenToLoad, 0);
+		ScanCMD = 0;
+	}
+	else
+	{
+		//vTaskSuspend(xScanTaskHandle);
+		//rubbish pressing screen
+		ScreenToLoad = PRESSING;
+		xQueueSendFromISR(gui_msg_q, &ScreenToLoad, 0);
+		ScanCMD = 0;
+	}
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
@@ -242,6 +266,20 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
   /* USER CODE END EXTI15_10_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART6 global interrupt.
+  */
+void USART6_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART6_IRQn 0 */
+
+  /* USER CODE END USART6_IRQn 0 */
+  HAL_UART_IRQHandler(&huart6);
+  /* USER CODE BEGIN USART6_IRQn 1 */
+
+  /* USER CODE END USART6_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
