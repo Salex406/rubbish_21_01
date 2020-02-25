@@ -8,8 +8,9 @@
 #define PROGRESSBAR_HORIZONTAL 0
 #define PROGRESSBAR_VERTICAL 1
 #define LCD_COLOR_GREENCONTAINER 0xFF00b800
+#define LCD_COLOR_ORANGEBUTTON 0xFFFF7F00
 
-
+#define ABS(X)                 ((X) > 0 ? (X) : -(X))
 
 void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32_t color);
 void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t progress,uint8_t type,uint32_t color);
@@ -27,3 +28,6 @@ void PrintFullness(uint8_t container,uint8_t perc);
 void get_touch_pos(uint16_t *x, uint16_t *y);
 void print_touch_pos(uint16_t x, uint16_t y);
 uint8_t LoadImagesFromSdToRAM(void);
+uint8_t processCode(uint8_t* code);
+void drawArrow(uint16_t x, uint16_t y,uint16_t length);
+void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2);

@@ -1818,7 +1818,7 @@ static void DrawChar(uint16_t Xpos, uint16_t Ypos, uint8_t background, const uin
   * @param  x3: Point 3 X position
   * @param  y3: Point 3 Y position
   */
-static void FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
+void FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
 {
   int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
   yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,

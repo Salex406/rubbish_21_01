@@ -3,6 +3,7 @@
 #include "stm32f769i_discovery_lcd.h"
 #include "stm32f769i_discovery_ts.h"
 #include "stdio.h"
+#include "string.h"
 
 #include "../Components/ft6x06/ft6x06.h"
 
@@ -77,6 +78,74 @@ uint32_t OpenBMP(uint8_t *ptr, const char* fname)
   }
 }
 
+void FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
+{
+  int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
+  yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
+  curpixel = 0;
+
+  deltax = ABS(x2 - x1);        /* The difference between the x's */
+  deltay = ABS(y2 - y1);        /* The difference between the y's */
+  x = x1;                       /* Start x off at the first pixel */
+  y = y1;                       /* Start y off at the first pixel */
+
+  if (x2 >= x1)                 /* The x-values are increasing */
+  {
+    xinc1 = 1;
+    xinc2 = 1;
+  }
+  else                          /* The x-values are decreasing */
+  {
+    xinc1 = -1;
+    xinc2 = -1;
+  }
+
+  if (y2 >= y1)                 /* The y-values are increasing */
+  {
+    yinc1 = 1;
+    yinc2 = 1;
+  }
+  else                          /* The y-values are decreasing */
+  {
+    yinc1 = -1;
+    yinc2 = -1;
+  }
+
+  if (deltax >= deltay)         /* There is at least one x-value for every y-value */
+  {
+    xinc1 = 0;                  /* Don't change the x when numerator >= denominator */
+    yinc2 = 0;                  /* Don't change the y for every iteration */
+    den = deltax;
+    num = deltax / 2;
+    numadd = deltay;
+    numpixels = deltax;         /* There are more x-values than y-values */
+  }
+  else                          /* There is at least one y-value for every x-value */
+  {
+    xinc2 = 0;                  /* Don't change the x for every iteration */
+    yinc1 = 0;                  /* Don't change the y when numerator >= denominator */
+    den = deltay;
+    num = deltay / 2;
+    numadd = deltax;
+    numpixels = deltay;         /* There are more y-values than x-values */
+  }
+
+  for (curpixel = 0; curpixel <= numpixels; curpixel++)
+  {
+    BSP_LCD_DrawLine(x, y, x3, y3);
+
+    num += numadd;              /* Increase the numerator by the top of the fraction */
+    if (num >= den)             /* Check if numerator >= denominator */
+    {
+      num -= den;               /* Calculate the new numerator value */
+      x += xinc1;               /* Change the x as appropriate */
+      y += yinc1;               /* Change the y as appropriate */
+    }
+    x += xinc2;                 /* Change the x as appropriate */
+    y += yinc2;                 /* Change the y as appropriate */
+  }
+}
+
 uint8_t LoadImagesFromSdToRAM()
 {
 	FATFS SDFatFs;  /* File system object for SD card logical drive */
@@ -103,7 +172,7 @@ uint8_t LoadImagesFromSdToRAM()
 		a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
 		if(a==FR_OK)
 		{		
-				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
 			
 				//load image to RAM from .bmp file
 				uint8_t res = OpenBMP((uint8_t *)images[0].location,images[0].filename);
@@ -112,7 +181,7 @@ uint8_t LoadImagesFromSdToRAM()
 			
 				if(res==1){ TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE, 1); Error_Handler();}
 				pr+=step;
-				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+				placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
 				
 				//load images to RAM from .h files
 				for(uint8_t i=1;i<NumberOfOdjectsToLoadFromSD;i++)
@@ -130,7 +199,7 @@ uint8_t LoadImagesFromSdToRAM()
 						Error_Handler();
 					}
 						pr+=step;
-						placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
+						placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
 				}
 		}
 		else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"qZJBLA LART] QANaTJ",CENTER_MODE, 1); Error_Handler();}
@@ -187,6 +256,16 @@ void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t
 		TFT_FillRectangle(x, y, x + width, y - filledLength, color);
 		TFT_FillRectangle(x, y - length, x + width, y - filledLength, 0xFFFFFFFF); 
 	}
+}
+
+
+void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
+{
+  hdma2d_discovery.LayerCfg[1].InputAlpha = alpha1;
+  hdma2d_discovery.LayerCfg[0].InputAlpha = alpha2;
+  HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+  HAL_DMA2D_ConfigLayer(&hdma2d, 0);
+
 }
 
 //func from ST. Is not used now
@@ -630,6 +709,16 @@ void DrawNumOnContainer(uint8_t num, uint8_t pos)
 	}
 }
 
+void drawArrow(uint16_t x, uint16_t y,uint16_t length)
+{
+	uint8_t tr_h = 20;
+	uint8_t width  =50;
+	BSP_LCD_SetTextColor(LCD_COLOR_ORANGEBUTTON);
+	TFT_FillRectangle(x, y, x + length, y + width, LCD_COLOR_ORANGEBUTTON);
+	FillTriangle(x + length, x + length, x+tr_h+length,y,y+width,y+width/2);
+	
+}
+
 void PrintFullness(uint8_t container,uint8_t perc)
 {
 	if(perc>=100)perc=99;
@@ -655,7 +744,7 @@ void DrawPercents()
 				DMA2D_DrawImage((uint32_t)images[15].location, 433, 158, 23, 26);
 				osDelay(5);	
 				DMA2D_DrawImage((uint32_t)images[15].location, 609, 158, 23, 26);
-}
+} 
 
 void get_touch_pos(uint16_t *x, uint16_t *y)
 {
@@ -676,4 +765,18 @@ void print_touch_pos(uint16_t x, uint16_t y)
       BSP_LCD_SetFont(&Font12);
       BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE, 1);
 }
-
+char plastic[14];
+char metal[14];
+char glass[14];
+uint8_t processCode(uint8_t* code)
+{
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_SetFont(&Font12);
+  BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 25, code, RIGHT_MODE, 1);
+	strcpy(plastic, "4606224000121");
+	strcpy(metal, "4600823094017");
+	strcpy(glass, "5060214370028");
+	if(strcmp((char*)code,plastic)==0) return 1;
+	else if(strcmp((char*)code,metal)==0) return 2;
+	else if(strcmp((char*)code,glass)==0) return 3;
+}

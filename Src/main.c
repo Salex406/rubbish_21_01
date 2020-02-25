@@ -131,6 +131,7 @@ SDRAM_HandleTypeDef hsdram1;
 TaskHandle_t xScanTaskHandle = NULL;
 osThreadId scanTaskHandle;
 osThreadId blinkTaskHandle;
+osThreadId pressingTaskHandle;
 osThreadId drawTaskHandle;
 osThreadId touchTaskHandle;
 /* USER CODE END PV */
@@ -153,6 +154,7 @@ void StartScanTask(void const * argument);
 extern void StartBlinkTask(void const * argument);
 extern void ScreensDrawer(void const * argument);
 extern void StartTouchTask(void const * argument);
+extern void StartPressingTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -246,6 +248,7 @@ int main(void)
 	strcpy(images[18].name, "i_fyellow");
 	strcpy(images[19].name, "i_fblue");
 
+//0xc011 frameb.stop
 	images[0].location = (uint32_t *)0xC0300000;
 	images[1].location = (uint32_t *)0xC0419800;//0xC0410800;
 	images[2].location = (uint32_t *)0xC0439400;
@@ -316,7 +319,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 	
-	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 1280);
+	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 64);
   scanTaskHandle = osThreadCreate(osThread(scanTask), &xScanTaskHandle);
 	
 	/* definition and creation of blinkTask */
@@ -330,6 +333,10 @@ int main(void)
 	/* definition and creation of touchTask */
   osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1280);
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
+	
+	/* definition and creation of pressingTask */
+  osThreadDef(pressingTask, StartPressingTask, osPriorityNormal, 0, 64);
+  touchTaskHandle = osThreadCreate(osThread(pressingTask), NULL);
   /* USER CODE END RTOS_THREADS */
   /* Start scheduler */
   osKernelStart();
