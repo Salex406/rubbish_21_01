@@ -35,15 +35,6 @@
 #include "ScanerCodes_GM66.h"
 
 
-typedef enum {
-    MAIN,        //0
-    SETTINGS,        //1
-    CALL,    //2
-    HELP,      //3
-    DOOR_OPEN,
-		PRESSING
-}Screen;
-
 const uint8_t NumberOfOdjectsToLoadFromSD = 20;
 const uint16_t LoadProgressBarPosY = 285;
 const uint16_t LoadProgressBarPosX = 228;
@@ -65,6 +56,9 @@ const uint16_t LeftButtonX = 13;
 const uint16_t TopButtonY = 13;
 const uint16_t BottomButtonY = 342;
 
+const uint16_t PresTimeout = 40;
+const uint16_t CriticalCurrentForPres = 15;
+
 Screen CurrentScreen;
 
 
@@ -75,15 +69,8 @@ uint8_t sect[4096];
 uint32_t ts_status = TS_OK;
 #define LCD_FRAME_BUFFER SDRAM_DEVICE_ADDR
 
-
-struct Image
-{
-	char  name[15];
-	char  filename[15];
-	uint16_t width;
-	uint16_t height;
-	uint32_t* location;
-};
+uint8_t* dma2d_in1;
+uint8_t* dma2d_in2;
 
 struct Image images[20];
 //0 - main
@@ -126,7 +113,7 @@ UART_HandleTypeDef huart6;
 
 SDRAM_HandleTypeDef hsdram1;
 
-
+osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 TaskHandle_t xScanTaskHandle = NULL;
 osThreadId scanTaskHandle;
@@ -148,13 +135,13 @@ static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
-void StartScanTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 extern void StartBlinkTask(void const * argument);
 extern void ScreensDrawer(void const * argument);
 extern void StartTouchTask(void const * argument);
 extern void StartPressingTask(void const * argument);
+extern void StartScanTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -270,9 +257,13 @@ int main(void)
 	images[18].location = (uint32_t *)0xC0643EE4; //yellow flap
 	images[19].location = (uint32_t *)0xC0678564; //blue flap
 																	//0xC1000000
-	
+	dma2d_in1 = (uint8_t *) 0xC017E800;
+	dma2d_in2 = (uint8_t *) 0xC01FE000;
 	BSP_LCD_Init();
 	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+	//BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS_2);
+	//BSP_LCD_SetLayerVisible(1, DISABLE);
+	BSP_LCD_SetLayerVisible(0, ENABLE);
 	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
 	TFT_FillScreen(LCD_COLOR_WHITE);
 	
@@ -290,10 +281,10 @@ int main(void)
 	osMessageQDef(touch_Queue, 1, uint8_t);
   TOUCH_Queue = osMessageCreate(osMessageQ(touch_Queue), NULL);
 	
-	/*uint8_t uart_str[20];
-	sprintf((char*)uart_str,"Start");
+	uint8_t uart_str[20];
+	sprintf((char*)uart_str,"Start\n");
 	HAL_UART_Transmit(&huart1,uart_str,5,100);
-	*/
+	
 	//EXTI->IMR=(1<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 2 */
 
@@ -315,7 +306,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-
+	
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 	
@@ -335,13 +326,15 @@ int main(void)
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
 	
 	/* definition and creation of pressingTask */
-  osThreadDef(pressingTask, StartPressingTask, osPriorityNormal, 0, 64);
+  osThreadDef(pressingTask, StartPressingTask, osPriorityHigh, 0, 512);
   touchTaskHandle = osThreadCreate(osThread(pressingTask), NULL);
   /* USER CODE END RTOS_THREADS */
+
   /* Start scheduler */
   osKernelStart();
  
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -891,14 +884,31 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_5|GPIO_PIN_3, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PJ13 PJ5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_5;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PJ13 PJ5 PJ3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_5|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PI13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -912,11 +922,42 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PC8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PF6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PH6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+	
+	/*Configure GPIO pin : PF7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PJ0 PJ1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
@@ -939,6 +980,8 @@ static void MX_GPIO_Init(void)
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
+
+
 /**
   * @brief  Period elapsed callback in non blocking mode
   * @note   This function is called  when TIM1 interrupt took place, inside

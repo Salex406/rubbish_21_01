@@ -32,6 +32,23 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+typedef enum {
+    MAIN,        //0
+    SETTINGS,        //1
+    CALL,    //2
+    HELP,      //3
+    DOOR_OPEN,
+		PRESSING
+}Screen;
+
+struct Image
+{
+	char  name[15];
+	char  filename[15];
+	uint16_t width;
+	uint16_t height;
+	uint32_t* location;
+};
 
 /* USER CODE END Includes */
 

@@ -31,3 +31,4 @@ uint8_t LoadImagesFromSdToRAM(void);
 uint8_t processCode(uint8_t* code);
 void drawArrow(uint16_t x, uint16_t y,uint16_t length);
 void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2);
+void TFT_DrawBitmapToMem(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp, uint8_t *pdst);

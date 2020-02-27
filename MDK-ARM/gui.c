@@ -7,19 +7,82 @@
 
 #include "../Components/ft6x06/ft6x06.h"
 
-struct Image
-{
-	char  name[15];
-	char  filename[15];
-	uint16_t width;
-	uint16_t height;
-	uint32_t* location;
-};
-
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
 extern struct Image images[20];
 extern const uint16_t NumOnContainerY;
+
+extern uint8_t* dma2d_in1;
+extern uint8_t* dma2d_in2;
+
+void TFT_DrawBitmapToMem(uint32_t Xpos, uint32_t Ypos, uint8_t *pbmp, uint8_t *pdst)
+{
+	uint32_t index=0, width=0, height=0, bit_pixel=0;
+	/* Get bitmap data addres offset*/
+	index = *(__IO uint16_t *) (pbmp+10);
+	index |= (*(__IO uint16_t *) (pbmp+12)) << 16;
+	/* Read bitmap width */
+	width = *(__IO uint16_t *) (pbmp+18);
+	width |= (*(__IO uint16_t *) (pbmp+20)) << 16;
+	/* Read bitmap height */
+	height = *(__IO uint16_t *) (pbmp+22);
+	height |= (*(__IO uint16_t *) (pbmp+24)) << 16;
+	/* Read bit/pixel */
+	bit_pixel = *(__IO uint16_t *) (pbmp+28);
+	/* Bypass the bitmap header */
+	pbmp += (index + (width * (height-1) * (bit_pixel/8)));
+	if((bit_pixel/8) == 4)
+	{
+		TFT_FillScreen(0xFFFF0000);
+	}
+	else if((bit_pixel/8) == 2)
+	{
+		TFT_FillScreen(0xFF00FF00);
+	}
+	else
+	{
+		/* Convert picture to ARGB8888 pixel format */
+		for(index=0; index < height; index++)
+		{
+			hdma2d.Init.Mode = DMA2D_M2M_PFC;
+			hdma2d.Init.ColorMode = DMA2D_ARGB8888;
+			hdma2d.Init.OutputOffset = 0;
+			hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+			hdma2d.LayerCfg[1].InputAlpha = 0xFF;
+			hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB888;
+			hdma2d.LayerCfg[1].InputOffset = 0;
+			if(HAL_DMA2D_Init(&hdma2d) == HAL_OK)
+			{
+				if(HAL_DMA2D_ConfigLayer(&hdma2d, 1) == HAL_OK)
+				{
+					if(HAL_DMA2D_Start(&hdma2d, (uint32_t) pbmp, (uint32_t) pdst, width, 1) == HAL_OK)
+					{
+						HAL_DMA2D_PollForTransfer(&hdma2d, 10);
+					}
+				}
+			}
+			pdst += 800*4;
+			pbmp -= width*(bit_pixel/8);
+		}
+	}
+  hdma2d.Init.Mode = DMA2D_M2M_BLEND;
+  hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+  hdma2d.Init.OutputOffset = 0;
+  hdma2d.LayerCfg[1].InputOffset = 0;
+  hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+  hdma2d.LayerCfg[1].AlphaMode = DMA2D_REPLACE_ALPHA;
+  hdma2d.LayerCfg[1].InputAlpha = 0;
+  hdma2d.LayerCfg[0].InputOffset = 0;
+  hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_ARGB8888;
+  hdma2d.LayerCfg[0].AlphaMode = DMA2D_REPLACE_ALPHA;
+  hdma2d.LayerCfg[0].InputAlpha = 0;
+  if (HAL_DMA2D_Init(&hdma2d) == HAL_OK)
+	{
+		HAL_DMA2D_ConfigLayer(&hdma2d, 0);
+		HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+	}
+	bit_pixel = 0;
+}
 
 //load .bmp to RAM
 uint32_t OpenBMP(uint8_t *ptr, const char* fname)
@@ -259,14 +322,6 @@ void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t
 }
 
 
-void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
-{
-  hdma2d_discovery.LayerCfg[1].InputAlpha = alpha1;
-  hdma2d_discovery.LayerCfg[0].InputAlpha = alpha2;
-  HAL_DMA2D_ConfigLayer(&hdma2d, 1);
-  HAL_DMA2D_ConfigLayer(&hdma2d, 0);
-
-}
 
 //func from ST. Is not used now
 uint32_t Touchscreen_Handle_NewTouch(void)
@@ -779,4 +834,11 @@ uint8_t processCode(uint8_t* code)
 	if(strcmp((char*)code,plastic)==0) return 1;
 	else if(strcmp((char*)code,metal)==0) return 2;
 	else if(strcmp((char*)code,glass)==0) return 3;
+}
+void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
+{
+  hdma2d_discovery.LayerCfg[1].InputAlpha = alpha1;
+  hdma2d_discovery.LayerCfg[0].InputAlpha = alpha2;
+	HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+	HAL_DMA2D_ConfigLayer(&hdma2d, 0);
 }

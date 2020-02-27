@@ -78,5 +78,6 @@ rubbish\freertos.o: ../Inc/stm32f769i_discovery.h
 rubbish\freertos.o: ../Inc/../Fonts/fonts.h
 rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+rubbish\freertos.o: ..\MDK-ARM\mechanics.h
+rubbish\freertos.o: ..\MDK-ARM\gui.h
 rubbish\freertos.o: ../Inc/ScanerCodes_GM66.h
-rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\locale.h

@@ -27,15 +27,6 @@
 /* USER CODE BEGIN Includes */
 #include "cmsis_os.h"
 
-typedef enum {
-    MAIN,        //0
-    SETTINGS,        //1
-    CALL,    //2
-    HELP,      //3
-    DOOR_OPEN,
-		PRESSING
-}Screen;
-
 extern osMessageQId TOUCH_Queue;
 extern xQueueHandle gui_msg_q;
 Screen ScreenToLoad;
