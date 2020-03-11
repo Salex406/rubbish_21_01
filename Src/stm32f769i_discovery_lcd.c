@@ -97,10 +97,11 @@ EndDependencies */
 #include "../Fonts/font20.c"
 #include "../Fonts/font16.c"
 #include "../Fonts/font12.c"
-#include "../Fonts/rus24.c"
+//#include "../Fonts/rus24.c"
 #include "../Fonts/bahn24.c"
 #include "../Fonts/font8.c"
 #include "../Fonts/rus48.c"
+#include "../Fonts/eng48.c"
 
 /** @addtogroup BSP
   * @{
@@ -1954,6 +1955,71 @@ static void LL_ConvertLineToARGB8888(void *pSrc, void *pDst, uint32_t xSize, uin
   }
 }
 
+void BSP_LCD_DisplayStringAt_m(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, uint8_t *Lang, Text_AlignModeTypdef Mode, uint8_t background)
+{
+  uint16_t refcolumn = 1, i = 0;
+  uint32_t size = 0, xsize = 0;
+  uint8_t  *ptr = Text;
+
+  /* Get the text size */
+  while (*ptr++) size ++ ;
+
+  /* Characters number per line */
+  xsize = (BSP_LCD_GetXSize()/DrawProp[ActiveLayer].pFont->Width);
+
+  switch (Mode)
+  {
+  case CENTER_MODE:
+    {
+      refcolumn = Xpos + ((xsize - size)* DrawProp[ActiveLayer].pFont->Width) / 2;
+      break;
+    }
+  case LEFT_MODE:
+    {
+      refcolumn = Xpos;
+      break;
+    }
+  case RIGHT_MODE:
+    {
+      refcolumn = - Xpos + ((xsize - size)*DrawProp[ActiveLayer].pFont->Width);
+      break;
+    }
+  default:
+    {
+      refcolumn = Xpos;
+      break;
+    }
+  }
+
+  /* Check that the Start column is located in the screen */
+  if ((refcolumn < 1) || (refcolumn >= 0x8000))
+  {
+    refcolumn = 1;
+  }
+  /* Send the string character by character on LCD */
+	uint16_t cntr = 0;
+  while ((*Text != 0) & (((BSP_LCD_GetXSize() - (i*DrawProp[ActiveLayer].pFont->Width)) & 0xFFFF) >= DrawProp[ActiveLayer].pFont->Width))
+  {
+    /* Display one character on LCD */
+		if(Lang[cntr] == 0) BSP_LCD_SetFont(&eng48);
+		else BSP_LCD_SetFont(&rus48);
+		
+    BSP_LCD_DisplayChar(refcolumn, Ypos, *Text, background);
+		//BSP_LCD_DrawRect(refcolumn, Ypos,DrawProp[ActiveLayer].pFont->Width,DrawProp[ActiveLayer].pFont->Height);
+    /* Decrement the column position by 16 */
+		
+		//changed for russian fonts
+    //refcolumn += DrawProp[ActiveLayer].pFont->Width;
+		//refcolumn += 28; for 48
+		refcolumn += DrawProp[ActiveLayer].pFont->Height * 0.58;//experimental
+		//18
+
+    /* Point on the next character */
+    Text++;
+    i++;
+		cntr++;
+  }
+}
 /**
   * @}
   */

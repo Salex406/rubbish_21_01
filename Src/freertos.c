@@ -31,6 +31,7 @@
 #include "stdio.h"
 #include "mechanics.h"
 #include "ScanerCodes_GM66.h"
+#include "esp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +46,7 @@ typedef enum {
     SCAN_CODE,
     
 }Task;
-
+/*
 extern const uint16_t RightButtonX;
 extern const uint16_t LeftButtonX;
 extern const uint16_t TopButtonY;
@@ -57,7 +58,7 @@ extern const uint16_t ContainerBlueFlapX;
 extern const uint16_t ContainerBottomX;
 extern const uint16_t ContainerBottomY;
 extern const uint16_t NumOnContainerY;
-extern const uint8_t DistanceBetweenStrings48;
+extern const uint8_t DistanceBetweenStrings48;*/
 	
 extern DMA2D_HandleTypeDef hdma2d;
 extern LTDC_HandleTypeDef hltdc;
@@ -70,6 +71,7 @@ extern Screen CurrentScreen;
 TaskHandle_t xScanTaskH;
 TaskHandle_t xPressingTaskH;
 extern xQueueHandle gui_msg_q;
+extern xQueueHandle err_msg_q;
 extern osMessageQId TOUCH_Queue;
 
 uint8_t Code[20] = {0};
@@ -77,6 +79,7 @@ uint8_t* test = Code;
 uint8_t Command[20];
 uint8_t Data_Recieve, Data_Analize, ScanCMD = 0; 
 uint32_t count = 0;
+uint8_t rotation_counter = 0;
 HAL_StatusTypeDef Status;
 
 uint8_t DoorScreenState=0;
@@ -121,10 +124,10 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 /* USER CODE BEGIN Application */
 
 void StartBlinkTask(void const * argument)
-{
+{	
+	char code[20];
   for(;;)
   {
-
 		HAL_GPIO_TogglePin(GPIOJ,GPIO_PIN_5);
     osDelay(800);
   }
@@ -134,7 +137,6 @@ void StartBlinkTask(void const * argument)
 void StartPressingTask(void const * argument)
 {
 	xPressingTaskH=xTaskGetCurrentTaskHandle();
-	uint8_t uart_str[50];
   for(;;)
   {
 		ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
@@ -142,73 +144,56 @@ void StartPressingTask(void const * argument)
 		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 		
 		//there is no carriage
-		if(HAL_GPIO_ReadPin(K_K1_PORT,K_K1_Pin)==0)driveCarriageToPos(START);
+		if(HAL_GPIO_ReadPin(K_K1_PORT,K_K1_Pin)==0)driveCarriageToPos(START_POS);
 		
-		PressState s = drivePress(DOWN);
-		switch (s)
+		Error s = drivePress(DOWN);
+		if(s == NO_ERR)
 		{
-			case OK:
-			{
-				sprintf((char*)uart_str,"ptask ok\n\r");
-				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-				
-				HAL_NVIC_ClearPendingIRQ(EXTI0_IRQn);
-				HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-				
-				osDelay(50);
-				Screen screenl = MAIN;
-				xQueueSend(gui_msg_q, &screenl, 0);
-				break;
-			}
-			case OVERCURRENT_ERR:
-			{
-				sprintf((char*)uart_str,"overcurrent ptask down err\n\r");
-				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-				
-				HAL_NVIC_ClearPendingIRQ(EXTI0_IRQn);
-				HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-				
-				osDelay(50);
-				Screen screenl = HELP;
-				xQueueSend(gui_msg_q, &screenl, 0);
-				break;
-			}
-			case TIMEOUT_ERR:
-			{
-				sprintf((char*)uart_str,"timeout ptask err\n\r");
-				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-				
-				HAL_NVIC_ClearPendingIRQ(EXTI0_IRQn);
-				HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-				HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-				
-				osDelay(50);
-				Screen screenl = HELP;
-				xQueueSend(gui_msg_q, &screenl, 0);
-				break;
-			}
+			Screen screenl = MAIN;
+			xQueueSend(gui_msg_q, &screenl, 0);
 		}
+		else if(s == OVERCURENT_PRESSING)
+		{
+			xQueueSend(err_msg_q, &s, 0);
+			Screen screenl = ERR;
+			xQueueSend(gui_msg_q, &screenl, 0);
+			
+			Error s = drivePress(UP);
+			if(s != NO_ERR)
+			{
+				xQueueSend(err_msg_q, &s, 0);
+				Screen screenl = ERR;
+				xQueueSend(gui_msg_q, &screenl, 0);
+			}
+			doorBlock(0);
+		}
+		else
+		{
+			xQueueSend(err_msg_q, &s, 0);
+			Screen screenl = ERR;
+			xQueueSend(gui_msg_q, &screenl, 0);
+		}
+		HAL_NVIC_ClearPendingIRQ(EXTI0_IRQn);
+		HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
+		HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+		HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
   }
 }
 
-uint8_t UartData[100] = {0};
+
 void StartScanTask(void const * argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
 	//uint8_t i=0, j=0, k=0;
 	InitBarcodeReader();
-	ScanCMD=1;
+	ScanCMD=0;
+	uint8_t UartData[100] = {0};
 	xScanTaskH=xTaskGetCurrentTaskHandle();
   for(;;)
   {
 		ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-		while(1)
+		while(ScanCMD == 1)
 		{
 		if(ScanCMD != 0)
 		{
@@ -216,7 +201,7 @@ void StartScanTask(void const * argument)
 			{	
 				ReadCode(Command);
 				Status = HAL_UART_Transmit(&huart6, Command, 9, 21);
-				count=0;
+				count = 0;
 			}
 			HAL_UART_Receive_IT(&huart6, &UartData[0], 100);
 			if(count>=100)
@@ -241,13 +226,10 @@ void StartScanTask(void const * argument)
 						if((j==13)&(UartData[i] == 0x0D))
 						{	
 							ScanCMD =0;
-							for(j = 0; j<sizeof(UartData); j++)
-							{		
-								UartData[j] = 0;
-		
-							}
+							memset(UartData, 0, sizeof(UartData));
 							//Code[13] = (uint8_t)"\0";
-							uint8_t res = processCode(Code);
+							uint8_t res = findCode((char*)Code);
+							//processCode(Code);
 							Screen screenToLoad;
 							switch (res)
 							{
@@ -352,20 +334,16 @@ void ScreensDrawer(void const * argument)
 				PrintFullness(3,30);
 				osDelay(5);
 				DrawPercents();
-				
-			uint8_t lcd_string[60] = "";
+			
 			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 
 			BSP_LCD_SetFont(&rus48);
 			BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
-			sprintf((char*)lcd_string, "rMASTJL");
-			BSP_LCD_DisplayStringAt(130, 434, lcd_string, LEFT_MODE,0);//15 first string
+			BSP_LCD_DisplayStringAt(130, 434, (uint8_t*)StringPlastic, LEFT_MODE,0);//15 first string
 			
-			sprintf((char*)lcd_string, "tTFLMP");
-			BSP_LCD_DisplayStringAt(330, 434, lcd_string, LEFT_MODE,0);
+			BSP_LCD_DisplayStringAt(330, 434, (uint8_t*)StringGlass, LEFT_MODE,0);
 			
-			sprintf((char*)lcd_string, "oFTAMM");
-			BSP_LCD_DisplayStringAt(503, 434, lcd_string, LEFT_MODE,0);
+			BSP_LCD_DisplayStringAt(503, 434, (uint8_t*)StringMetal, LEFT_MODE,0);
 			
 			DoorScreenState=0;
 			}
@@ -378,15 +356,14 @@ void ScreensDrawer(void const * argument)
 				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
 				
 				uint8_t lcd_string[10] = "";
-				sprintf((char*)lcd_string,"pASTRPKLJ");
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
 				BSP_LCD_SetFont(&rus48);
-				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				BSP_LCD_DisplayStringAt(0, 10, (uint8_t*)StringSettings, CENTER_MODE, 0);
 				
 				sprintf((char*)lcd_string, "ABCDEFGHIJKLMNOP");
-				BSP_LCD_DisplayStringAt(200, 100, lcd_string, LEFT_MODE,0);
-				sprintf((char*)lcd_string, "QRSTUVWXYZ[\]^_`a");
-				BSP_LCD_DisplayStringAt(200, 135, lcd_string, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(200, 100, lcd_string, RIGHT_MODE,0);
+				sprintf((char*)lcd_string, "QRSTUVWXYZ[\\]^_`a");
+				BSP_LCD_DisplayStringAt(200, 135, lcd_string, RIGHT_MODE,0);
 				HAL_ADC_Start(&hadc1);
 				HAL_ADC_PollForConversion(&hadc1,100);
 				uint16_t res = HAL_ADC_GetValue(&hadc1);
@@ -405,11 +382,9 @@ void ScreensDrawer(void const * argument)
 				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
 				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
 				
-				uint8_t lcd_string[10] = "";
-				sprintf((char*)lcd_string,"rPEEFRHLA");
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
 				BSP_LCD_SetFont(&rus48);
-				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				BSP_LCD_DisplayStringAt(0, 10, (uint8_t*)StringHelp, CENTER_MODE, 0);
 				osDelay(10);
 			}
 			else if(msg==HELP)
@@ -419,11 +394,9 @@ void ScreensDrawer(void const * argument)
 				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
 				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
 				
-				uint8_t lcd_string[10] = "";
-				sprintf((char*)lcd_string,"rPNP[^");
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
 				BSP_LCD_SetFont(&rus48);
-				BSP_LCD_DisplayStringAt(0, 10, lcd_string, CENTER_MODE, 0);
+				BSP_LCD_DisplayStringAt(0, 10, (uint8_t*)StringHelp, CENTER_MODE, 0);
 				osDelay(10);
 			}
 			else if(msg==DOOR_OPEN)
@@ -436,31 +409,23 @@ void ScreensDrawer(void const * argument)
 				DMA2D_DrawImage((uint32_t)images[16].location, ContainerBottomX, ContainerBottomY, images[16].width, images[16].height);
 				osDelay(10);
 				
-				uint8_t lcd_string[10] = "";
-				sprintf((char*)lcd_string,"pASTRPKLJ");
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
 				BSP_LCD_SetFont(&rus48);
-				sprintf((char*)lcd_string, "rMASTJL");
-				BSP_LCD_DisplayStringAt(130, 434, lcd_string, LEFT_MODE,0);//15 first string
+
+				BSP_LCD_DisplayStringAt(130, 434, (uint8_t*)StringPlastic, LEFT_MODE,0);//15 first string
 			
-				sprintf((char*)lcd_string, "tTFLMP");
-				BSP_LCD_DisplayStringAt(330, 434, lcd_string, LEFT_MODE,0);
-			
-				sprintf((char*)lcd_string, "oFTAMM");
-				BSP_LCD_DisplayStringAt(503, 434, lcd_string, LEFT_MODE,0);
-				
+				BSP_LCD_DisplayStringAt(330, 434, (uint8_t*)StringGlass, LEFT_MODE,0);
+
+				BSP_LCD_DisplayStringAt(503, 434, (uint8_t*)StringMetal, LEFT_MODE,0);
 				
 				if(DoorScreenState==0)
 				{
 				//bin is not chosen(initial screen)
 				BSP_LCD_SetTextColor(LCD_COLOR_RED);
-				sprintf((char*)lcd_string, "vEAMJTF LR]ZLU S BUT]MLJ");
-				BSP_LCD_DisplayStringAt(20, 8, lcd_string, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(20, 8, (uint8_t*)StringRemoveCap, CENTER_MODE,0);
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
-				sprintf((char*)lcd_string, "tLAOJRUKTF ZTRJWLPE JMJ");
-				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48, lcd_string, CENTER_MODE,0);
-				sprintf((char*)lcd_string, "C]BFRJTF BAL CRUYOU`");
-				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48*2, lcd_string, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48, (uint8_t*)StringScanBarcodeOr, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48*2, (uint8_t*)StringChooseBinManually, CENTER_MODE,0);
 				ScanCMD = 1;
 					
 				xTaskNotifyGive(xScanTaskH);
@@ -468,30 +433,30 @@ void ScreensDrawer(void const * argument)
 				else if(DoorScreenState==1)
 				{
 				//after click on 1 bin
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				osDelay(10);
 				ScanCMD = 0;
 				DMA2D_DrawImage((uint32_t)images[17].location, ContainerGreenFlapX, ContainerFlapsY, images[17].width, images[17].height);
-				sprintf((char*)lcd_string, "rPNFSTJTF NUSPR C LANFRU");
-				BSP_LCD_DisplayStringAt(20, 8, lcd_string, CENTER_MODE,0);
-				sprintf((char*)lcd_string, "JMJ C]BFRJTF ERUDPK BAL");
-				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48, lcd_string, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8, (uint8_t*)StringPlaceRubbishIntoBin, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8+DistanceBetweenStrings48, (uint8_t*)StringOrChooseAnotherBin, LEFT_MODE,0);
 				}
 				else if(DoorScreenState==2)
 				{
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				osDelay(10);
 				ScanCMD = 0;
 				DMA2D_DrawImage((uint32_t)images[18].location, ContainerYellowFlapX, ContainerFlapsY, images[18].width, images[18].height);
-				sprintf((char*)lcd_string, "rPNFSTJTF NUSPR C LANFRU");
-				BSP_LCD_DisplayStringAt(20, 8, lcd_string, CENTER_MODE,0);
-				sprintf((char*)lcd_string, "JMJ C]BFRJTF ERUDPK BAL");
-				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48, lcd_string, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8, (uint8_t*)StringPlaceRubbishIntoBin, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8+DistanceBetweenStrings48, (uint8_t*)StringOrChooseAnotherBin, LEFT_MODE,0);
 				}
 				else if(DoorScreenState==3)
 				{
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				osDelay(10);
 				ScanCMD = 0;
 				DMA2D_DrawImage((uint32_t)images[19].location, ContainerBlueFlapX, ContainerFlapsY, images[19].width, images[19].height);
-				sprintf((char*)lcd_string, "rPNFSTJTF NUSPR C LANFRU");
-				BSP_LCD_DisplayStringAt(20, 8, lcd_string, CENTER_MODE,0);
-				sprintf((char*)lcd_string, "JMJ C]BFRJTF ERUDPK BAL");
-				BSP_LCD_DisplayStringAt(20, 8+DistanceBetweenStrings48, lcd_string, CENTER_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8, (uint8_t*)StringPlaceRubbishIntoBin, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(145, 8+DistanceBetweenStrings48, (uint8_t*)StringOrChooseAnotherBin, LEFT_MODE,0);
 				}
 				
 			}
@@ -501,13 +466,50 @@ void ScreensDrawer(void const * argument)
 				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
 				//DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
 				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
-				uint8_t lcd_string[30] = "";
 				BSP_LCD_SetFont(&rus48);
-				sprintf((char*)lcd_string, "oUSPR QRFSSUFTSa,");
-				BSP_LCD_DisplayStringAt(20, 60, lcd_string, LEFT_MODE,0);
-				sprintf((char*)lcd_string, "QPEPHEJTF...");
-				BSP_LCD_DisplayStringAt(20, 60+DistanceBetweenStrings48, lcd_string, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(20, 60, (uint8_t*)StringRubbishIsPressing, LEFT_MODE,0);
+				BSP_LCD_DisplayStringAt(20, 60+DistanceBetweenStrings48, (uint8_t*)StringWait, LEFT_MODE,0);
 				xTaskNotifyGive(xPressingTaskH);
+			}
+			else if(msg==ERR)
+			{
+				//error screen
+				CurrentScreen = ERR;
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				BSP_LCD_SetTextColor(LCD_COLOR_DARKGREEN);
+				BSP_LCD_SetFont(&rus48);
+				BSP_LCD_DisplayStringAt(0, 10, (uint8_t*)StringError, CENTER_MODE, 0);
+				
+				Error e;
+				xQueueReceive(err_msg_q, &e, 0);
+				
+				switch(e)
+				{
+					case OVERCURENT_PRESSING:
+					{
+						BSP_LCD_DisplayStringAt(20, 155, (uint8_t*)StringPressOverload, LEFT_MODE,0);
+						break;
+					}
+					case OVERTIME_PRESSING:
+					{
+						BSP_LCD_DisplayStringAt(20, 155, (uint8_t*)StringPressTimeout, LEFT_MODE,0);
+						break;
+					}
+					case OVERTIME_AFTERPRESSING:
+					{
+						BSP_LCD_DisplayStringAt(20, 155, (uint8_t*)StringPressTimeout, LEFT_MODE,0);
+						break;
+					}
+					case OVERTIME_PRESSUP:
+					{
+						BSP_LCD_DisplayStringAt(20, 155, (uint8_t*)StringPressUpTimeout, LEFT_MODE,0);
+						break;
+					}
+				}
+				
+				osDelay(10);
 			}
 			HAL_NVIC_ClearPendingIRQ(EXTI0_IRQn);
 			HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
@@ -584,6 +586,14 @@ void StartTouchTask(void const * argument)
 						break;
 					
 					case HELP:
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						break;
+					case ERR:
 						if(x > 0 && x < 115 && y > 0 && y < 115)
 						{
 							//left top button

@@ -1,4 +1,3 @@
-#include "stm32f7xx_hal.h"
 #include "main.h"
 #include "fatfs.h"
 #include "stdlib.h"
@@ -14,7 +13,6 @@
 
 void TFT_FillRectangle(uint16_t x1, uint16_t y1,uint16_t x2, uint16_t y2, uint32_t color);
 void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t progress,uint8_t type,uint32_t color);
-uint32_t Touchscreen_Handle_NewTouch(void);
 void TFT_FillScreen(uint32_t color);
 void DMA2D_DrawImage(uint32_t data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 void DMA2D_DrawImage_simple(uint32_t data, uint32_t x, uint32_t y, uint32_t width, uint32_t height);

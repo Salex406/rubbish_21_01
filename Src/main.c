@@ -33,36 +33,14 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "ScanerCodes_GM66.h"
-
-
-const uint8_t NumberOfOdjectsToLoadFromSD = 20;
-const uint16_t LoadProgressBarPosY = 285;
-const uint16_t LoadProgressBarPosX = 228;
-const uint16_t LoadProgressBarLength = 260;
-const uint8_t LoadProgressBarWidth = 35;
-
-const uint16_t ContainerBottomX = 126;
-const uint16_t ContainerBottomY = 210;
-const uint16_t ContainerFlapsY = ContainerBottomY - 143;
-const uint16_t ContainerYellowFlapX = 325;
-const uint16_t ContainerGreenFlapX = 146;
-const uint16_t ContainerBlueFlapX = 502;
-const uint16_t NumOnContainerY = 120;
-
-const uint8_t DistanceBetweenStrings48 = 35;
-
-const uint16_t RightButtonX = 670;
-const uint16_t LeftButtonX = 13;
-const uint16_t TopButtonY = 13;
-const uint16_t BottomButtonY = 342;
-
-const uint16_t PresTimeout = 40;
-const uint16_t CriticalCurrentForPres = 15;
+#include "mechanics.h"
+#include "esp.h"
 
 Screen CurrentScreen;
 
 
 xQueueHandle gui_msg_q;
+xQueueHandle err_msg_q;
 osMessageQId TOUCH_Queue;
 
 uint8_t sect[4096];
@@ -108,6 +86,7 @@ LTDC_HandleTypeDef hltdc;
 
 SD_HandleTypeDef hsd2;
 
+UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
 
@@ -135,6 +114,7 @@ static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
+static void MX_UART5_Init(void);
 
 /* USER CODE BEGIN PFP */
 extern void StartBlinkTask(void const * argument);
@@ -153,6 +133,7 @@ extern void StartScanTask(void const * argument);
   * @brief  The application entry point.
   * @retval int
   */
+char code[14];
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -192,6 +173,7 @@ int main(void)
   MX_FATFS_Init();
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
 	strcpy(images[0].filename, "m_scr_v2.bmp");
 	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
@@ -257,8 +239,7 @@ int main(void)
 	images[18].location = (uint32_t *)0xC0643EE4; //yellow flap
 	images[19].location = (uint32_t *)0xC0678564; //blue flap
 																	//0xC1000000
-	dma2d_in1 = (uint8_t *) 0xC017E800;
-	dma2d_in2 = (uint8_t *) 0xC01FE000;
+
 	BSP_LCD_Init();
 	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
 	//BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS_2);
@@ -266,6 +247,8 @@ int main(void)
 	BSP_LCD_SetLayerVisible(0, ENABLE);
 	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
 	TFT_FillScreen(LCD_COLOR_WHITE);
+	InitBarcodeReader();
+	espPower(ENABLE);
 	
 	//load images
 	LoadImagesFromSdToRAM();
@@ -285,7 +268,8 @@ int main(void)
 	sprintf((char*)uart_str,"Start\n");
 	HAL_UART_Transmit(&huart1,uart_str,5,100);
 	
-	//EXTI->IMR=(1<<EXTI_EMR_MR0_Pos);
+	err_msg_q = xQueueCreate(1, sizeof(Error));
+	rotationCounter(DISABLE);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -305,24 +289,25 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-	
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 	
-	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 64);
+	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 1024);
   scanTaskHandle = osThreadCreate(osThread(scanTask), &xScanTaskHandle);
 	
 	/* definition and creation of blinkTask */
-  osThreadDef(blinkTask, StartBlinkTask, osPriorityNormal, 0, 16);
+  osThreadDef(blinkTask, StartBlinkTask, osPriorityNormal, 0, 32);
   blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
+	
+
 	
 	/* definition and creation of drawTask */
   osThreadDef(drawTask, ScreensDrawer, osPriorityNormal, 0, 1024);
   drawTaskHandle = osThreadCreate(osThread(drawTask), NULL);
 	
 	/* definition and creation of touchTask */
-  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1280);
+  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1024);
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
 	
 	/* definition and creation of pressingTask */
@@ -394,8 +379,9 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_USART1
-                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_SDMMC2|RCC_PERIPHCLK_CLK48;
+                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART5
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -403,6 +389,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLLSAIDivQ = 1;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
   PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.Uart5ClockSelection = RCC_UART5CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
@@ -746,6 +733,41 @@ static void MX_SDMMC2_SD_Init(void)
 }
 
 /**
+  * @brief UART5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART5_Init(void)
+{
+
+  /* USER CODE BEGIN UART5_Init 0 */
+
+  /* USER CODE END UART5_Init 0 */
+
+  /* USER CODE BEGIN UART5_Init 1 */
+
+  /* USER CODE END UART5_Init 1 */
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART5_Init 2 */
+
+  /* USER CODE END UART5_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -875,37 +897,41 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOJ_CLK_ENABLE();
   __HAL_RCC_GPIOI_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_5|GPIO_PIN_3, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
+                          |GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PJ13 PJ5 PJ3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_5|GPIO_PIN_3;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PJ13 PJ4 PJ5 PJ3 
+                           PJ1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
+                          |GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  /*Configure GPIO pins : PA12 PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_11;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -924,12 +950,20 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PC8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PF6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  /*Configure GPIO pin : PF7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PF6 PF9 PF8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_9|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
@@ -940,28 +974,44 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PH7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PH6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
-	
-	/*Configure GPIO pin : PF7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PJ0 PJ1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  /*Configure GPIO pin : PJ0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PB14 PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);

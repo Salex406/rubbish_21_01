@@ -3,10 +3,11 @@
 #include "main.h"
 extern UART_HandleTypeDef huart6;
 extern uint8_t Command[20];
-extern uint8_t UartData[100];
+//extern uint8_t UartData[100];
 /*******************************************************************/
 //Calculate CRC
 //
+/*
 unsigned int crc_cal_by_bit(uint8_t* ptr, unsigned int len)
 { 
 unsigned int crc = 0;
@@ -23,6 +24,7 @@ unsigned int crc = 0;
 	} 
 	return crc;
 }
+*/
 /*******************************************************************/
 //ReadZoneBit
 //Address : 0x0000~0x00FF( 2 bytes) , address to start reading zone bit
@@ -78,12 +80,14 @@ void WriteZoneByte(uint16_t Adress, uint8_t Data)
 		WriteZoneBit( Adress, Data, Command );
 		HAL_UART_Transmit(&huart6, Command, 9, 100);
 }
+/*
 void ReadZoneByte(uint16_t Adress, uint8_t Number)
 {
 		ReadZoneBit( Adress, Number, Command );
 		HAL_UART_Transmit(&huart6, Command, 9, 100);
 		HAL_UART_Receive_IT(&huart6, UartData, 100 );	
 }
+*/
 
 void InitBarcodeReader()
 {

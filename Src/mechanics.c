@@ -5,7 +5,29 @@
 #include "mechanics.h"
 #include "string.h"
 
-PressState PressUp()
+extern xQueueHandle gui_msg_q;
+extern xQueueHandle err_msg_q;
+
+void doorBlock(uint8_t state)
+{
+	if(state == 0) HAL_GPIO_WritePin(DOOR_PORT,DOOR_Pin,GPIO_PIN_RESET);
+	else HAL_GPIO_WritePin(DOOR_PORT,DOOR_Pin,GPIO_PIN_SET);
+}
+
+void rotationCounter(FunctionalState state)
+{
+	if(state == ENABLE)
+	{
+		HAL_NVIC_ClearPendingIRQ(EXTI4_IRQn);
+		HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+	}		
+	else 
+	{
+		HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+	}
+}
+
+Error PressUp()
 {
 	uint16_t counter = 0;
 	uint8_t k_pup_state = 0;
@@ -26,8 +48,8 @@ PressState PressUp()
 	
 		HAL_GPIO_WritePin(PUP_PORT,PUP_Pin,GPIO_PIN_RESET);
 
-	if(counter <= MaxCount) return OK;
-	else return TIMEOUT_ERR;
+	if(counter < MaxCount) return NO_ERR;
+	else return OVERTIME_PRESSUP;
 }
 
 uint8_t driveCarriageToPos(CarriagePos destination)
@@ -35,28 +57,28 @@ uint8_t driveCarriageToPos(CarriagePos destination)
 	uint8_t uart_str[30];
 	switch(destination)
 	{
-		case START:
+		case START_POS:
 		{
 			sprintf((char*)uart_str,"carriage -> start\n");
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
 			
 			break;
 		}
-		case GLASS:
+		case GLASS_POS:
 		{
 			sprintf((char*)uart_str,"carriage -> glass\n");
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
 			
 			break;
 		}
-		case METAL:
+		case METAL_POS:
 		{
 			sprintf((char*)uart_str,"carriage -> metal\n");
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
 			
 			break;
 		}
-		case PLASTIC:
+		case PLASTIC_POS:
 		{
 			sprintf((char*)uart_str,"carriage -> plastic\n");
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
@@ -67,7 +89,7 @@ uint8_t driveCarriageToPos(CarriagePos destination)
 	return 0;
 }
 
-PressState drivePress(PressPos destination)
+Error drivePress(PressPos destination)
 {
 	uint8_t uart_str[80];
 	float sensor_s = 0.125; // V/A 20A
@@ -84,9 +106,10 @@ PressState drivePress(PressPos destination)
 		{
 			sprintf((char*)uart_str,"press -> up\n\r");
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-			PressState s = PressUp();
+			Error s = PressUp();
 			sprintf((char*)uart_str,"pressup result: %d \n\r", s);
 			HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
+			return s;
 			break;
 		}
 		case DOWN:
@@ -103,7 +126,7 @@ PressState drivePress(PressPos destination)
 				HAL_ADC_Start(&hadc1);
 				HAL_ADC_PollForConversion(&hadc1,100);
 
-				//placePrBar(20,400,760,50,counter*100/MaxCount,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
+				placePrBar(20,400,760,50,counter*100/MaxCount,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
 				osDelay(100);
 				sprintf((char*)uart_str," pressing.ADC: %d,cnt: %d,pin %d \n\r",adc_val,counter,k_pdn_state);
 				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
@@ -144,7 +167,7 @@ PressState drivePress(PressPos destination)
 					sprintf((char*)uart_str,"press->up\n\r");
 					HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
 					
-					PressState s = PressUp();
+					Error s = PressUp();
 					
 					sprintf((char*)uart_str," pressup_state: %d\n\r ",s);
 					HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
@@ -154,7 +177,7 @@ PressState drivePress(PressPos destination)
 				{
 					sprintf((char*)uart_str,"afterpr_timeout err\n\r");
 					HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-					return TIMEOUT_ERR;
+					return OVERTIME_AFTERPRESSING;
 				}
 			}
 			else if((adc_val > crit_adc) && (k_pdn_state == 0))
@@ -165,7 +188,7 @@ PressState drivePress(PressPos destination)
 		
 				sprintf((char*)uart_str,"overcurrent press down err\n\r");
 				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-				return OVERCURRENT_ERR;
+				return OVERCURENT_PRESSING;
 			}
 			else if(counter >= MaxCount)
 			{
@@ -174,7 +197,7 @@ PressState drivePress(PressPos destination)
 			
 				sprintf((char*)uart_str,"overtime press down err\n\r");
 				HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
-				return TIMEOUT_ERR;
+				return OVERTIME_PRESSING;
 			}
 			break;
 		}

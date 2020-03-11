@@ -81,3 +81,6 @@ rubbish\freertos.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 rubbish\freertos.o: ..\MDK-ARM\mechanics.h
 rubbish\freertos.o: ..\MDK-ARM\gui.h
 rubbish\freertos.o: ../Inc/ScanerCodes_GM66.h
+rubbish\freertos.o: ..\MDK-ARM\esp.h
+rubbish\freertos.o: ..\MDK-ARM\gui.h
+rubbish\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h

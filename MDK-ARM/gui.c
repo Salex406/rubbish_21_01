@@ -214,16 +214,15 @@ uint8_t LoadImagesFromSdToRAM()
 	FATFS SDFatFs;  /* File system object for SD card logical drive */
 	char SD_Path[4]; /* SD card logical drive path */
 	//from main.c
-	extern uint8_t NumberOfOdjectsToLoadFromSD;
+	/*extern uint8_t NumberOfOdjectsToLoadFromSD;
 	extern uint16_t LoadProgressBarPosX;
 	extern uint16_t LoadProgressBarPosY;
 	extern uint16_t LoadProgressBarLength;
-	extern uint8_t LoadProgressBarWidth;
+	extern uint8_t LoadProgressBarWidth;*/
 	
 	BSP_LCD_SetFont(&rus48);
-	BSP_LCD_DisplayStringAt(0,235,(uint8_t*)"jADRUILA...",CENTER_MODE, 1); //"Loading.."
-	BSP_LCD_SetFont(&Font20)
-	;
+	BSP_LCD_DisplayStringAt(0, 235, (uint8_t*)StringLoad, CENTER_MODE, 1); //"Loading.."
+	BSP_LCD_SetFont(&Font20);
 	//Loading bitmaps to RAM
 	uint8_t pr = 0;
 	uint8_t step = 100/NumberOfOdjectsToLoadFromSD;
@@ -265,9 +264,9 @@ uint8_t LoadImagesFromSdToRAM()
 						placePrBar(LoadProgressBarPosX,LoadProgressBarPosY,LoadProgressBarLength,LoadProgressBarWidth,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_ORANGEBUTTON);
 				}
 		}
-		else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"qZJBLA LART] QANaTJ",CENTER_MODE, 1); Error_Handler();}
+		else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(0,240,(uint8_t*)StringMountError,CENTER_MODE, 1); Error_Handler();}
 	}
-	else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(30,240,(uint8_t*)"qTSUTSTCUFT LARTA QANaTJ",CENTER_MODE, 1); Error_Handler();}
+	else { TFT_FillScreen(LCD_COLOR_WHITE);BSP_LCD_SetFont(&rus48);BSP_LCD_DisplayStringAt(30,240,(uint8_t*)StringNoSD,CENTER_MODE, 1); Error_Handler();}
 	return 0;
 }
 
@@ -321,135 +320,6 @@ void placePrBar(uint16_t x, uint16_t y, uint16_t length, uint16_t width, uint8_t
 	}
 }
 
-
-
-//func from ST. Is not used now
-uint32_t Touchscreen_Handle_NewTouch(void)
-{
-TS_StateTypeDef  TS_State = {0};
-static uint32_t touchscreen_color_idx = 0;
-#define TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS 15
-#define TOUCH_INFO_STRING_SIZE                70
-  uint16_t x1 = 0;
-  uint16_t y1 = 0;
-  uint16_t x2 = 0;
-  uint16_t y2 = 0;
-  uint32_t drawTouch1 = 0; /* activate/deactivate draw of footprint of touch 1 */
-  uint32_t drawTouch2 = 0; /* activate/deactivate draw of footprint of touch 2 */
-  uint32_t colors[24] = {LCD_COLOR_BLUE, LCD_COLOR_GREEN, LCD_COLOR_RED, LCD_COLOR_CYAN, LCD_COLOR_MAGENTA, LCD_COLOR_YELLOW,
-                         LCD_COLOR_LIGHTBLUE, LCD_COLOR_LIGHTGREEN, LCD_COLOR_LIGHTRED, LCD_COLOR_LIGHTCYAN, LCD_COLOR_LIGHTMAGENTA,
-                         LCD_COLOR_LIGHTYELLOW, LCD_COLOR_DARKBLUE, LCD_COLOR_DARKGREEN, LCD_COLOR_DARKRED, LCD_COLOR_DARKCYAN,
-                         LCD_COLOR_DARKMAGENTA, LCD_COLOR_DARKYELLOW, LCD_COLOR_LIGHTGRAY, LCD_COLOR_GRAY, LCD_COLOR_DARKGRAY,
-                         LCD_COLOR_BLACK, LCD_COLOR_BROWN, LCD_COLOR_ORANGE };
-  uint32_t ts_status = TS_OK;
-  uint8_t lcd_string[TOUCH_INFO_STRING_SIZE] = "";
-
-  /* Check in polling mode in touch screen the touch status and coordinates */
-  /* of touches if touch occurred                                           */
-  ts_status = BSP_TS_GetState(&TS_State);
-  if(TS_State.touchDetected)
-  {
-    /* One or dual touch have been detected  */
-
-    /* Erase previous information on touchscreen play pad area */
-			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-			//BSP_LCD_SetTextColor(colors[(touchscreen_color_idx++ % 24)]);
-      //BSP_LCD_FillCircle(x1, y1, TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS);
-
-      BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-      //BSP_LCD_SetFont(&Font16);
-      //BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 70, (uint8_t *)"TOUCH INFO : ", CENTER_MODE);
-			
-			x1 = TS_State.touchX[0];
-			y1 = TS_State.touchY[0];
-      BSP_LCD_SetFont(&Font20);
-      sprintf((char*)lcd_string, "x1 = %d, y1 = %d",
-              x1,
-              y1);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, RIGHT_MODE, 1);
-    //BSP_LCD_FillRect(0, 80, BSP_LCD_GetXSize(), BSP_LCD_GetYSize() - 160);
-
-    /* Re-Draw touch screen play area on LCD */
-    /*BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-    BSP_LCD_DrawRect(10, 90, BSP_LCD_GetXSize() - 20, BSP_LCD_GetYSize() - 180);
-    BSP_LCD_DrawRect(11, 91, BSP_LCD_GetXSize() - 22, BSP_LCD_GetYSize() - 182);*/
-
-    /* Erase previous information on bottom text bar */
-   // BSP_LCD_FillRect(0, BSP_LCD_GetYSize() - 80, BSP_LCD_GetXSize(), 80);
-
-    /* Desactivate drawing footprint of touch 1 and touch 2 until validated against boundaries of touch pad values */
-    //drawTouch1 = drawTouch2 = 0;
-
-    /* Get X and Y position of the first touch post calibrated */
-   // x1 = TS_State.touchX[0];
-    //y1 = TS_State.touchY[0];
-    
-    /*if((y1 > (90 + TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS)) &&
-       (y1 < (BSP_LCD_GetYSize() - 90 - TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS)))
-    {
-      drawTouch1 = 1;
-    }*/
-
-    /* If valid touch 1 position : inside the reserved area for the use case : draw the touch */
-    /*if(drawTouch1 == 1)
-    {
-      BSP_LCD_SetTextColor(colors[(touchscreen_color_idx++ % 24)]);
-      BSP_LCD_FillCircle(x1, y1, TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS);
-
-      BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-      //BSP_LCD_SetFont(&Font16);
-      //BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 70, (uint8_t *)"TOUCH INFO : ", CENTER_MODE);
-
-      BSP_LCD_SetFont(&Font12);
-      sprintf((char*)lcd_string, "x1 = %d, y1 = %d",
-              x1,
-              y1);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, CENTER_MODE);
-    }*/ /* of if(drawTouch1 == 1) */
-
-    /*if(TS_State.touchDetected > 1)
-    {*/
-      /* Get X and Y position of the second touch post calibrated */
-      /*x2 = TS_State.touchX[1];
-      y2 = TS_State.touchY[1];
-      
-      if((y2 > (90 + TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS)) &&
-         (y2 < (BSP_LCD_GetYSize() - 90 - TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS)))
-      {
-        drawTouch2 = 1;
-      }
-
-     
-      if(drawTouch2 == 1)
-      {
-        sprintf((char*)lcd_string, "x2 = %d, y2 = %d",
-                x2,
-                y2);
-        BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 35, lcd_string, CENTER_MODE);
-
-        //BSP_LCD_SetTextColor(colors[(touchscreen_color_idx++ % 24)]);
-        //BSP_LCD_FillCircle(x2, y2, TS_MULTITOUCH_FOOTPRINT_CIRCLE_RADIUS);
-      //} *//* of if(drawTouch2 == 1) */
-
-//} /* of if(TS_State.touchDetected > 1) */
-    /*if((drawTouch1 == 1) || (drawTouch2 == 1))
-    {
-      
-      ts_status = BSP_TS_Get_GestureId(&TS_State);
-
-      sprintf((char*)lcd_string, "Gesture Id = %s", ts_gesture_id_string_tab[TS_State.gestureId]);
-      BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 15, lcd_string, CENTER_MODE);
-    }
-    else
-    {
-      BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-      BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 70, (uint8_t *)"Invalid touch position : use drawn touch area : ", CENTER_MODE);
-    }*/
-  } /* of if(TS_State.TouchDetected) */
-
-  return(ts_status);
-}
 
 extern DMA2D_HandleTypeDef hdma2d_discovery;
 extern LTDC_HandleTypeDef  hltdc_discovery;
@@ -823,6 +693,7 @@ void print_touch_pos(uint16_t x, uint16_t y)
 char plastic[14];
 char metal[14];
 char glass[14];
+
 uint8_t processCode(uint8_t* code)
 {
 	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
@@ -835,6 +706,7 @@ uint8_t processCode(uint8_t* code)
 	else if(strcmp((char*)code,metal)==0) return 2;
 	else if(strcmp((char*)code,glass)==0) return 3;
 }
+
 void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
 {
   hdma2d_discovery.LayerCfg[1].InputAlpha = alpha1;
@@ -842,3 +714,4 @@ void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
 	HAL_DMA2D_ConfigLayer(&hdma2d, 1);
 	HAL_DMA2D_ConfigLayer(&hdma2d, 0);
 }
+
