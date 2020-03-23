@@ -84,6 +84,7 @@
   * @brief  LCD FB_StartAddress  
   */
 #define LCD_FB_START_ADDRESS       ((uint32_t)0xC0000000)
+#define LCD_FB_START_ADDRESS_2       ((uint32_t)0xC0177000)
    
 /** @brief Maximum number of LTDC layers
  */
@@ -353,8 +354,9 @@ void     BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t pixel);
 void     BSP_LCD_Clear(uint32_t Color);
 void     BSP_LCD_ClearStringLine(uint32_t Line);
 void     BSP_LCD_DisplayStringAtLine(uint16_t Line, uint8_t *ptr);
-void     BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode);
-void     BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
+void     BSP_LCD_DisplayStringAt(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode, uint8_t background);
+void     BSP_LCD_DisplayStringAt_m(uint16_t Xpos, uint16_t Ypos, uint8_t *Text, uint8_t *Lang, Text_AlignModeTypdef Mode, uint8_t background);
+void     BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii, uint8_t background);
 
 void     BSP_LCD_DrawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
 void     BSP_LCD_DrawVLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);

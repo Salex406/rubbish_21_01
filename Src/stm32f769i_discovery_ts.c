@@ -74,7 +74,7 @@ EndDependencies */
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f769i_discovery.h"
 #include "stm32f769i_discovery_ts.h"
-
+#include "stdio.h"
 /** @addtogroup BSP
   * @{
   */
@@ -459,6 +459,61 @@ __weak void BSP_TS_INT_MspInit(void)
   gpio_init_structure.Pull      = GPIO_PULLUP;
   gpio_init_structure.Speed     = GPIO_SPEED_HIGH;
   HAL_GPIO_Init(TS_INT_GPIO_PORT, &gpio_init_structure);
+}
+
+extern UART_HandleTypeDef huart1;
+uint8_t BSP_TS_GetState_mod(TS_StateTypeDef *TS_State)
+{
+  static uint32_t _x[TS_MAX_NB_TOUCH] = {0, 0};
+  static uint32_t _y[TS_MAX_NB_TOUCH] = {0, 0};
+  uint8_t ts_status = TS_OK;
+  uint16_t tmp;
+  uint16_t Raw_x[TS_MAX_NB_TOUCH];
+  uint16_t Raw_y[TS_MAX_NB_TOUCH];
+  uint16_t xDiff;
+  uint16_t yDiff;
+  uint32_t index;
+#if (TS_MULTI_TOUCH_SUPPORTED == 1)
+  uint32_t weight = 0;
+  uint32_t area = 0;
+  uint32_t event = 0;
+#endif /* TS_MULTI_TOUCH_SUPPORTED == 1 */
+
+  /* Check and update the number of touches active detected */
+  TS_State->touchDetected = ts_driver->DetectTouch(I2C_Address);
+  if(TS_State->touchDetected)
+  {
+ 
+      /* Get each touch coordinates */
+      ts_driver->GetXY(I2C_Address, &(Raw_x[0]), &(Raw_y[0]));
+			//uint8_t uart_str[40];
+			//sprintf((char*)uart_str,"r_x: %d r_y %d",Raw_x[0],Raw_y[0]);
+			//HAL_UART_Transmit(&huart1,uart_str,strlen((char*)uart_str),100);
+			
+			tmp = Raw_x[0];
+			Raw_x[0] = Raw_y[0]; 
+			Raw_y[0] = tmp;
+			
+      Raw_y[0] = FT_6206_MAX_HEIGHT - 1 - Raw_y[0];
+            
+      xDiff = Raw_x[0] > _x[0]? (Raw_x[0] - _x[0]): (_x[0] - Raw_x[0]);
+      yDiff = Raw_y[0] > _y[0]? (Raw_y[0] - _y[0]): (_y[0] - Raw_y[0]);
+
+      if ((xDiff + yDiff) > 5)
+      {
+        _x[0] = Raw_x[0];
+        _y[0] = Raw_y[0];
+      }
+
+
+      TS_State->touchX[0] = _x[0];
+      TS_State->touchY[0] = _y[0];
+
+
+
+  } /* end of if(TS_State->touchDetected != 0) */
+
+  return (ts_status);
 }
 
 /**

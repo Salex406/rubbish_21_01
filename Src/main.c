@@ -31,27 +31,26 @@
 #include "string.h"
 #include "gui.h"
 #include "stdlib.h"
+#include "stdio.h"
+#include "ScanerCodes_GM66.h"
+#include "mechanics.h"
+#include "esp.h"
+
+Screen CurrentScreen;
+
 
 xQueueHandle gui_msg_q;
-osMessageQId USART_Queue;
-FATFS SDFatFs;  /* File system object for SD card logical drive */
-char SD_Path[4]; /* SD card logical drive path */
-const uint8_t NumberOfOdjectsToLoadFromSD = 17;
+xQueueHandle err_msg_q;
+osMessageQId TOUCH_Queue;
+
 uint8_t sect[4096];
 uint32_t ts_status = TS_OK;
 #define LCD_FRAME_BUFFER SDRAM_DEVICE_ADDR
 
+uint8_t* dma2d_in1;
+uint8_t* dma2d_in2;
 
-struct Screen
-{
-	char  name[15];
-	char  filename[15];
-	uint16_t width;
-	uint16_t height;
-	uint32_t* location;
-};
-
-struct Screen screens[17];
+struct Image images[20];
 //0 - main
 //1 - help icon
 //2 - settings icon
@@ -87,11 +86,18 @@ LTDC_HandleTypeDef hltdc;
 
 SD_HandleTypeDef hsd2;
 
+UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart6;
+
 SDRAM_HandleTypeDef hsdram1;
 
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
+TaskHandle_t xScanTaskHandle = NULL;
+osThreadId scanTaskHandle;
 osThreadId blinkTaskHandle;
+osThreadId pressingTaskHandle;
 osThreadId drawTaskHandle;
 osThreadId touchTaskHandle;
 /* USER CODE END PV */
@@ -106,81 +112,32 @@ static void MX_I2C1_Init(void);
 static void MX_LTDC_Init(void);
 static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
-void StartDefaultTask(void const * argument);
+static void MX_USART1_UART_Init(void);
+static void MX_USART6_UART_Init(void);
+static void MX_UART5_Init(void);
 
 /* USER CODE BEGIN PFP */
-void StartBlinkTask(void const * argument);
-void StartDrawTask(void const * argument);
-void StartTouchTask(void const * argument);
+extern void StartBlinkTask(void const * argument);
+extern void ScreensDrawer(void const * argument);
+extern void StartTouchTask(void const * argument);
+extern void StartPressingTask(void const * argument);
+extern void StartScanTask(void const * argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint32_t OpenBMP(uint8_t *ptr, const char* fname)
-{
-	uint32_t ind=0,sz=0,i1=0,ind1=0;
-	uint32_t bytesread = 0;
-	FRESULT a = 217;
-	FIL MyFile; 
-  static uint32_t bmp_addr;
-	a = f_open(&MyFile,fname,FA_READ);
-  if(a!=FR_OK)
-  {
-		return 1;
-  }
-  else
-  {
-    if(f_read(&MyFile,sect,30,(UINT *)&bytesread)!=FR_OK)
-    {
-      return 1;
-    }
-    else
-    {
-      bmp_addr=(uint32_t)sect;
-      /*Get bitmap size*/
-      sz=*(uint16_t*)(bmp_addr + 2);
-      sz|=(*(uint16_t*)(bmp_addr + 4))<<16;
-      /*Get bitmap data address offset*/
-      ind=*(uint16_t*)(bmp_addr + 0x000A);
-      ind|=(*(uint16_t*)(bmp_addr + 12))<<16;
-      f_close(&MyFile);
-      f_open(&MyFile,fname,FA_READ);
-      ind=0;
-      do
-      {
-        if(sz<4096)
-        {
-          i1=sz;
-        }
-        else
-        {
-          i1=4096;
-        }
-        sz-=i1;
-        f_lseek(&MyFile,ind1);
-        f_read(&MyFile,sect,i1,(UINT *)&bytesread);
-        memcpy((void*)(ptr+ind1),(void*)sect,i1);
-        ind1+=i1;
-      }
-      while(sz>0);
-      f_close(&MyFile);
-    }
-    ind1=0;
-		return 0;
-  }
-}
 
-
-/* USERCODE END 0 */
+/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
   * @retval int
   */
+char code[14];
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	//EXTI->IMR=(0<<EXTI_EMR_MR13_Pos)|(0<<EXTI_EMR_MR0_Pos);
   /* USER CODE END 1 */
   
 
@@ -196,14 +153,12 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -216,196 +171,105 @@ int main(void)
   MX_SDMMC2_SD_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
+  MX_USART1_UART_Init();
+  MX_USART6_UART_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
-	strcpy(screens[0].filename, "m_scr_v2.bmp");
-	strcpy(screens[1].filename, "help.h");//"bg_R.bmp"
-	strcpy(screens[2].filename, "settings.h");
-	strcpy(screens[3].filename, "call.h");
-	strcpy(screens[4].filename, "back.h");
-	strcpy(screens[5].filename, "0.h");
-	strcpy(screens[6].filename, "1.h");
-	strcpy(screens[7].filename, "2.h");
-	strcpy(screens[8].filename, "3.h");
-	strcpy(screens[9].filename, "4.h");
-	strcpy(screens[10].filename, "5.h");
-	strcpy(screens[11].filename, "6.h");
-	strcpy(screens[12].filename, "7.h");
-	strcpy(screens[13].filename, "8.h");
-	strcpy(screens[14].filename, "9.h");
-	strcpy(screens[15].filename, "perc.h");
-	strcpy(screens[16].filename, "cont.h");
+	strcpy(images[0].filename, "m_scr_v2.bmp");
+	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
+	strcpy(images[2].filename, "settings.h");
+	strcpy(images[3].filename, "call.h");
+	strcpy(images[4].filename, "back.h");
+	strcpy(images[5].filename, "0.h");
+	strcpy(images[6].filename, "1.h");
+	strcpy(images[7].filename, "2.h");
+	strcpy(images[8].filename, "3.h");
+	strcpy(images[9].filename, "4.h");
+	strcpy(images[10].filename, "5.h");
+	strcpy(images[11].filename, "6.h");
+	strcpy(images[12].filename, "7.h");
+	strcpy(images[13].filename, "8.h");
+	strcpy(images[14].filename, "9.h");
+	strcpy(images[15].filename, "perc.h");
+	strcpy(images[16].filename, "cont_bot.h");
+	strcpy(images[17].filename, "flp_grn.h");
+	strcpy(images[18].filename, "flp_ylw.h");
+	strcpy(images[19].filename, "flp_blue.h");
 	
-	strcpy(screens[0].name, "main");
-	strcpy(screens[1].name, "i_help");
-	strcpy(screens[2].name, "i_settings");
-	strcpy(screens[3].name, "i_call");
-	strcpy(screens[4].name, "i_back");
-	strcpy(screens[5].name, "n_0");
-	strcpy(screens[6].name, "n_1");
-	strcpy(screens[7].name, "n_2");
-	strcpy(screens[8].name, "n_3");
-	strcpy(screens[9].name, "n_4");
-	strcpy(screens[10].name, "n_5");
-	strcpy(screens[11].name, "n_6");
-	strcpy(screens[12].name, "n_7");
-	strcpy(screens[13].name, "n_5");
-	strcpy(screens[14].name, "n_9");
-	strcpy(screens[15].name, "n_perc");
-	strcpy(screens[16].name, "i_cont");
-	//1 screen is 0x119800
-	//1 icon is 1fc00
-	//1 big_num is 6c00
-	
-	//0 - main
-	//1 - help icon
-	//2 - settings icon
-	//3 - call icon
-	//4 - back icon
-	screens[0].location = (uint32_t *)0xC0300000;
-	screens[1].location = (uint32_t *)0xC0419800;//0xC0410800;
-	screens[2].location = (uint32_t *)0xC0439400;
-	screens[3].location = (uint32_t *)0xC0459000;
-	screens[4].location = (uint32_t *)0xC0478C00;
-	
-	screens[5].location = (uint32_t *)0xC0498800; //0
-	screens[6].location = (uint32_t *)0xC049F400; //1
-	screens[7].location = (uint32_t *)0xC04ACC00; //2
-	screens[8].location = (uint32_t *)0xC04B3800; //3
-	screens[9].location = (uint32_t *)0xC04BA400; //4
-	screens[10].location = (uint32_t *)0xC04C1000; //5
-	screens[11].location = (uint32_t *)0xC04C7C00; //6
-	screens[12].location = (uint32_t *)0xC04CE800; //7
-	screens[13].location = (uint32_t *)0xC04D5400;
-	screens[14].location = (uint32_t *)0xC04DC000;
-	screens[15].location = (uint32_t *)0xC04E2C00;
-	screens[16].location = (uint32_t *)0xC04E9800; //containers
-	
+	strcpy(images[0].name, "main");
+	strcpy(images[1].name, "i_help");
+	strcpy(images[2].name, "i_settings");
+	strcpy(images[3].name, "i_call");
+	strcpy(images[4].name, "i_back");
+	strcpy(images[5].name, "n_0");
+	strcpy(images[6].name, "n_1");
+	strcpy(images[7].name, "n_2");
+	strcpy(images[8].name, "n_3");
+	strcpy(images[9].name, "n_4");
+	strcpy(images[10].name, "n_5");
+	strcpy(images[11].name, "n_6");
+	strcpy(images[12].name, "n_7");
+	strcpy(images[13].name, "n_5");
+	strcpy(images[14].name, "n_9");
+	strcpy(images[15].name, "n_perc");
+	strcpy(images[16].name, "i_cont");
+	strcpy(images[17].name, "i_fgreen");
+	strcpy(images[18].name, "i_fyellow");
+	strcpy(images[19].name, "i_fblue");
+
+//0xc011 frameb.stop
+	images[0].location = (uint32_t *)0xC0300000;
+	images[1].location = (uint32_t *)0xC0419800;//0xC0410800;
+	images[2].location = (uint32_t *)0xC0439400;
+	images[3].location = (uint32_t *)0xC0459000;
+	images[4].location = (uint32_t *)0xC0478C00;
+	images[5].location = (uint32_t *)0xC0498800; //0
+	images[6].location = (uint32_t *)0xC049F400; //1
+	images[7].location = (uint32_t *)0xC04ACC00; //2
+	images[8].location = (uint32_t *)0xC04B3800; //3
+	images[9].location = (uint32_t *)0xC04BA400; //4
+	images[10].location = (uint32_t *)0xC04C1000; //5
+	images[11].location = (uint32_t *)0xC04C7C00; //6
+	images[12].location = (uint32_t *)0xC04CE800; //7
+	images[13].location = (uint32_t *)0xC04D5400;
+	images[14].location = (uint32_t *)0xC04DC000;
+	images[15].location = (uint32_t *)0xC04E2C00;
+	images[16].location = (uint32_t *)0xC04E4400; //container_bottom
+	images[17].location = (uint32_t *)0xC060F864; //green flap
+	images[18].location = (uint32_t *)0xC0643EE4; //yellow flap
+	images[19].location = (uint32_t *)0xC0678564; //blue flap
 																	//0xC1000000
+
 	BSP_LCD_Init();
 	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+	//BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS_2);
+	//BSP_LCD_SetLayerVisible(1, DISABLE);
+	BSP_LCD_SetLayerVisible(0, ENABLE);
 	BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER_BACKGROUND);
 	TFT_FillScreen(LCD_COLOR_WHITE);
-	//BSP_LCD_Clear(LCD_COLOR_WHITE);
-	BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"Loading..",CENTER_MODE);
+	InitBarcodeReader();
+	espPower(ENABLE);
 	
+	//load images
+	LoadImagesFromSdToRAM();
+
+	//draw main screen
+	Screen screenToLoad = MAIN;
+	gui_msg_q = xQueueCreate(1, sizeof(Screen));
+	xQueueSend(gui_msg_q, &screenToLoad, 0);
 	
-	//Loading bitmaps to RAM
-	uint8_t pr = 0;
-	uint8_t step = 100/NumberOfOdjectsToLoadFromSD;
-	FATFS_LinkDriver(&SD_Driver, SD_Path);
-	FRESULT a = 218;
-	if(HAL_GPIO_ReadPin(GPIOI,GPIO_PIN_15)==0)
-	{
-		a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
-		if(a==FR_OK)
-		{		
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				uint8_t res = OpenBMP((uint8_t *)screens[0].location,screens[0].filename);
-				if(res==1){ BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 1 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				res = ReadImage(screens[1].location,screens[1].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 2 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-			
-				res = ReadImage(screens[2].location,screens[2].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 3 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[3].location,screens[3].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 4 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[4].location,screens[4].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 5 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[5].location,screens[5].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 6 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[6].location,screens[6].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 7 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[7].location,screens[7].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 8 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[8].location,screens[8].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 9 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[9].location,screens[9].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 10 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[10].location,screens[10].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 11 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[11].location,screens[11].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 12 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[12].location,screens[12].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 13 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[13].location,screens[13].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 14 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[14].location,screens[14].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 15 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[15].location,screens[15].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 16 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				placePrBar(280,266,200,30,pr,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-				
-				res = ReadImage(screens[16].location,screens[16].filename);
-				if(res==1) { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"File 17 open error",CENTER_MODE); Error_Handler();}
-				pr+=step;
-				
-				placePrBar(280,266,200,30,100,PROGRESSBAR_HORIZONTAL,LCD_COLOR_BLUE);
-		}
-		else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD mount error",CENTER_MODE); Error_Handler();}
-	}
-	else { BSP_LCD_DisplayStringAt(0,240,(uint8_t*)"SD is not connected",CENTER_MODE); Error_Handler();}
-	uint8_t msg=0;
+	//init touchscreen
+	BSP_TS_Init(800,480);
+	BSP_TS_ITConfig();
+	osMessageQDef(touch_Queue, 1, uint8_t);
+  TOUCH_Queue = osMessageCreate(osMessageQ(touch_Queue), NULL);
 	
-	gui_msg_q = xQueueGenericCreate(1, 1, 0);
-	//uint8_t* location = (uint8_t *)0xC0419094;
-	//ConvertBitmap(0,0,location);
-	xQueueSend(gui_msg_q, &msg, 0);
-	ts_status = BSP_TS_Init(800,480);
-	ts_status = BSP_TS_ITConfig();
-	osMessageQDef(usart_Queue, 1, uint8_t);
-  USART_Queue = osMessageCreate(osMessageQ(usart_Queue), NULL);
+	uint8_t uart_str[20];
+	sprintf((char*)uart_str,"Start\n");
+	HAL_UART_Transmit(&huart1,uart_str,5,100);
 	
-	//BSP_LCD_DrawBitmap(0,0,(uint8_t *)main_screen);
-	//placePrBar(520,20,100,40,0,0,LCD_COLOR_BLUE);
-	//TFT_FillRectangle(20, 20, 40, 70, LCD_COLOR_BLUE);
-	//a = f_mount(&SDFatFs, (TCHAR const*)SDPath, 0);
-	//a = f_open(&JPEG_File, "im.bmp", FA_READ);
+	err_msg_q = xQueueCreate(1, sizeof(Error));
+	rotationCounter(DISABLE);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -425,24 +289,30 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1280);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 	
+	osThreadDef(scanTask, StartScanTask, osPriorityNormal, 0, 1024);
+  scanTaskHandle = osThreadCreate(osThread(scanTask), &xScanTaskHandle);
+	
 	/* definition and creation of blinkTask */
-  osThreadDef(blinkTask, StartBlinkTask, osPriorityNormal, 0, 16);
+  osThreadDef(blinkTask, StartBlinkTask, osPriorityNormal, 0, 32);
   blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
 	
+
+	
 	/* definition and creation of drawTask */
-  osThreadDef(drawTask, StartDrawTask, osPriorityNormal, 0, 1280);
+  osThreadDef(drawTask, ScreensDrawer, osPriorityNormal, 0, 1024);
   drawTaskHandle = osThreadCreate(osThread(drawTask), NULL);
 	
 	/* definition and creation of touchTask */
-  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 128);
+  osThreadDef(touchTask, StartTouchTask, osPriorityBelowNormal, 0, 1024);
   touchTaskHandle = osThreadCreate(osThread(touchTask), NULL);
+	
+	/* definition and creation of pressingTask */
+  osThreadDef(pressingTask, StartPressingTask, osPriorityHigh, 0, 512);
+  touchTaskHandle = osThreadCreate(osThread(pressingTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
@@ -484,7 +354,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 25;
   RCC_OscInitStruct.PLL.PLLN = 400;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 15;
+  RCC_OscInitStruct.PLL.PLLQ = 8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -508,14 +378,19 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_SDMMC2|RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_USART1
+                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART5
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
   PeriphClkInitStruct.PLLSAIDivQ = 1;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+  PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInitStruct.Uart5ClockSelection = RCC_UART5CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
@@ -857,6 +732,111 @@ static void MX_SDMMC2_SD_Init(void)
 
 }
 
+/**
+  * @brief UART5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART5_Init(void)
+{
+
+  /* USER CODE BEGIN UART5_Init 0 */
+
+  /* USER CODE END UART5_Init 0 */
+
+  /* USER CODE BEGIN UART5_Init 1 */
+
+  /* USER CODE END UART5_Init 1 */
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART5_Init 2 */
+
+  /* USER CODE END UART5_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 9600;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart6.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
 /* FMC initialization function */
 static void MX_FMC_Init(void)
 {
@@ -917,6 +897,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOJ_CLK_ENABLE();
@@ -925,14 +906,35 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
+                          |GPIO_PIN_1, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PJ13 PJ5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_5;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PJ13 PJ4 PJ5 PJ3 
+                           PJ1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
+                          |GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA12 PA11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PI13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -946,77 +948,79 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PC8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PF7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PF6 PF9 PF8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_9|GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PH7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PH6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PJ0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB14 PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-void StartBlinkTask(void const * argument)
-{
-  /* Infinite loop */
-  for(;;)
-  {
-		HAL_GPIO_TogglePin(GPIOJ,GPIO_PIN_5);
-    osDelay(800);
-  }
-}
 
-void StartDrawTask(void const * argument)
-{
-  /* Infinite loop */
-  for(;;)
-  {
-		uint8_t msg = 15;
-		if (xQueueReceive(gui_msg_q, &msg, 0) == pdTRUE)
-		{
-			if(msg==0)
-			{
-				//main screen
-				LCD_DrawBitmap(0,0,(uint8_t *)screens[msg].location);
-				DMA2D_DrawImage((uint32_t)screens[1].location, 670, 342, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[2].location, 13, 342, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[3].location, 670, 13, 120, 120);
-				DMA2D_DrawImage((uint32_t)screens[16].location, 126, 70, 540, 400);
-				osDelay(10);
-				PrintFullness(1,0);
-				osDelay(5);
-				PrintFullness(2,0);
-				osDelay(5);
-				PrintFullness(3,0);
-				osDelay(5);
-				DrawPercents();
-				
-				/*DrawNumOnContainer(9, 1);
-				DrawNumOnContainer(8, 2);
-				DrawNumOnContainer(7, 3);
-				DrawNumOnContainer(6, 4);
-				DrawNumOnContainer(5, 5);
-				DrawNumOnContainer(4, 6);*/
-			}
-			
-			//DMA2D_DrawImage(0xC0700000, 50, 50, 120, 120);
-		}
-    osDelay(400);
-  }
-}
 
-void StartTouchTask(void const * argument)
-{
-  /* Infinite loop */
-	osEvent event;
-  for(;;)
-  {
-		event = osMessageGet(USART_Queue, 100);
-  	if (event.status == osEventMessage)
-		{
-			//HAL_GPIO_WritePin(GPIOJ,GPIO_PIN_13,GPIO_PIN_SET);
-			//Touchscreen_Handle_NewTouch();
-		}
-    osDelay(10);
-  }
-}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1026,43 +1030,6 @@ void StartTouchTask(void const * argument)
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-	uint8_t i=0, j=0, k=0;
-  for(;;)
-  {
-		if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0) == GPIO_PIN_SET)
-		{
-			//Touchscreen_Handle_NewTouch();
-			//LCD_DrawBitmap(0,0,(uint8_t *)screens[0].location);
-			DMA2D_DrawImage((uint32_t)screens[16].location, 126, 70, 540, 400);
-			osDelay(10);
-			placePrBar(166,446,168,98,i,PROGRESSBAR_VERTICAL,0xFF00b800);
-			placePrBar(350,446,168,98,j,PROGRESSBAR_VERTICAL,LCD_COLOR_YELLOW);
-			placePrBar(536,446,168,98,k,PROGRESSBAR_VERTICAL,LCD_COLOR_BLUE);
-			osDelay(10);
-			DrawPercents();
-			osDelay(5);
-			PrintFullness(1,i);
-			osDelay(5);
-			PrintFullness(2,j);
-			osDelay(5);
-			PrintFullness(3,k);
-			i++;
-			j+=4;
-			k+=11;
-			if(i>100)i=0;
-			if(j>100)j=0;
-			if(k>100)k=0;
-			osDelay(200);
-		}
-    osDelay(80);
-		}
-  /* USER CODE END 5 */ 
-}
-
 
 
 /**

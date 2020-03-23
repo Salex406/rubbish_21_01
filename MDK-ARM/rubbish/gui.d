@@ -1,5 +1,6 @@
 rubbish\gui.o: gui.c
 rubbish\gui.o: gui.h
+rubbish\gui.o: ../Inc/main.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h
 rubbish\gui.o: ../Inc/stm32f7xx_hal_conf.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h
@@ -41,7 +42,8 @@ rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_sd.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
-rubbish\gui.o: ../Inc/main.h
+rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
+rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
 rubbish\gui.o: ../Inc/fatfs.h
 rubbish\gui.o: ../Middlewares/Third_Party/FatFs/src/ff.h
 rubbish\gui.o: ../Middlewares/Third_Party/FatFs/src/integer.h

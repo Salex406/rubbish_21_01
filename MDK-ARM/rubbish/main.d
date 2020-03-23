@@ -41,6 +41,8 @@ rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_sd.h
 rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h
 rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
+rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
+rubbish\main.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
 rubbish\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 rubbish\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 rubbish\main.o: ../Inc/FreeRTOSConfig.h
@@ -78,3 +80,10 @@ rubbish\main.o: ../Inc/../Components/ft6x06/ft6x06.h
 rubbish\main.o: ../Inc/../Components/ft6x06/../Common/ts.h
 rubbish\main.o: ..\MDK-ARM\gui.h
 rubbish\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+rubbish\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+rubbish\main.o: ../Inc/ScanerCodes_GM66.h
+rubbish\main.o: ..\MDK-ARM\mechanics.h
+rubbish\main.o: ..\MDK-ARM\gui.h
+rubbish\main.o: ..\MDK-ARM\esp.h
+rubbish\main.o: ..\MDK-ARM\gui.h
+rubbish\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h

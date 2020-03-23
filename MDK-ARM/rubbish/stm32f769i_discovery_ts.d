@@ -41,6 +41,8 @@ rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx
 rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_sdmmc.h
 rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
+rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
+rubbish\stm32f769i_discovery_ts.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
 rubbish\stm32f769i_discovery_ts.o: ../Inc/stm32f769i_discovery_ts.h
 rubbish\stm32f769i_discovery_ts.o: ../Inc/stm32f769i_discovery_lcd.h
 rubbish\stm32f769i_discovery_ts.o: ../Inc/../Components/otm8009a/otm8009a.h
@@ -51,3 +53,4 @@ rubbish\stm32f769i_discovery_ts.o: ../Inc/../Fonts/fonts.h
 rubbish\stm32f769i_discovery_ts.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 rubbish\stm32f769i_discovery_ts.o: ../Inc/../Components/ft6x06/ft6x06.h
 rubbish\stm32f769i_discovery_ts.o: ../Inc/../Components/ft6x06/../Common/ts.h
+rubbish\stm32f769i_discovery_ts.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F769xx,USE_HAL_DRIVER,STM32F769xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;  ../Drivers/STM32F7xx_HAL_Driver/Inc;  ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;  ../Middlewares/Third_Party/FatFs/src;  ../Middlewares/Third_Party/FreeRTOS/Source/include;  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;  ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;  ../Drivers/CMSIS/Device/ST/STM32F7xx/Include;  ../Drivers/CMSIS/Include;  ..\MDK-ARM</IncludePath>
+              <IncludePath>../Inc;                   ../Drivers/STM32F7xx_HAL_Driver/Inc;                   ../Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;                   ../Middlewares/Third_Party/FatFs/src;                   ../Middlewares/Third_Party/FreeRTOS/Source/include;                   ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;                   ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;                   ../Drivers/CMSIS/Device/ST/STM32F7xx/Include;                   ../Drivers/CMSIS/Include;                   ..\MDK-ARM</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -461,6 +461,41 @@
               <FilePath>..\Components\ft6x06\ft6x06.h</FilePath>
             </File>
             <File>
+              <FileName>Image_.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\Image_.h</FilePath>
+            </File>
+            <File>
+              <FileName>ScanerCodes_GM66.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\ScanerCodes_GM66.c</FilePath>
+            </File>
+            <File>
+              <FileName>ScanerCodes_GM66.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\ScanerCodes_GM66.h</FilePath>
+            </File>
+            <File>
+              <FileName>mechanics.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\mechanics.c</FilePath>
+            </File>
+            <File>
+              <FileName>mechanics.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\mechanics.h</FilePath>
+            </File>
+            <File>
+              <FileName>esp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\esp.c</FilePath>
+            </File>
+            <File>
+              <FileName>esp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\esp.h</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/main.c</FilePath>
@@ -504,11 +539,6 @@
               <FileName>stm32f7xx_hal_timebase_tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/stm32f7xx_hal_timebase_tim.c</FilePath>
-            </File>
-            <File>
-              <FileName>Image_.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Inc\Image_.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -654,6 +684,16 @@
               <FileName>stm32f7xx_hal_tim_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f7xx_hal_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f7xx_hal_uart_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart_ex.c</FilePath>
             </File>
           </Files>
         </Group>
