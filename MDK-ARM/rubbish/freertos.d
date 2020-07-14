@@ -52,6 +52,7 @@ rubbish\freertos.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\freertos.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
 rubbish\freertos.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
 rubbish\freertos.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
+rubbish\freertos.o: ../Inc/..\Drivers\hr4988_lib\hr4988.h
 rubbish\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
 rubbish\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h
 rubbish\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h

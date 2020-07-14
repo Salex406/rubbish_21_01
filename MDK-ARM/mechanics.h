@@ -76,3 +76,5 @@ uint8_t driveCarriageToPos(CarriagePos destination);
 Error drivePress(PressPos destination);
 void doorBlock(uint8_t state);
 void rotationCounter(FunctionalState state);
+void MX_GPIO_Init_custom(void);
+

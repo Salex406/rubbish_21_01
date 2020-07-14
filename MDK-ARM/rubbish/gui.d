@@ -44,6 +44,7 @@ rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
 rubbish\gui.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
+rubbish\gui.o: ../Inc/..\Drivers\hr4988_lib\hr4988.h
 rubbish\gui.o: ../Inc/fatfs.h
 rubbish\gui.o: ../Middlewares/Third_Party/FatFs/src/ff.h
 rubbish\gui.o: ../Middlewares/Third_Party/FatFs/src/integer.h
@@ -80,3 +81,5 @@ rubbish\gui.o: ../Inc/stm32f769i_discovery_ts.h
 rubbish\gui.o: ../Inc/../Components/ft6x06/ft6x06.h
 rubbish\gui.o: ../Inc/../Components/ft6x06/../Common/ts.h
 rubbish\gui.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+rubbish\gui.o: mechanics.h
+rubbish\gui.o: gui.h

@@ -38,6 +38,7 @@
 
 Screen CurrentScreen;
 
+HR4988_DriverTypeDef XDriver;
 
 xQueueHandle gui_msg_q;
 xQueueHandle err_msg_q;
@@ -86,6 +87,8 @@ LTDC_HandleTypeDef hltdc;
 
 SD_HandleTypeDef hsd2;
 
+TIM_HandleTypeDef htim3;
+
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
@@ -114,6 +117,7 @@ static void MX_SDMMC2_SD_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
+static void MX_TIM3_Init(void);
 static void MX_UART5_Init(void);
 
 /* USER CODE BEGIN PFP */
@@ -133,7 +137,6 @@ extern void StartScanTask(void const * argument);
   * @brief  The application entry point.
   * @retval int
   */
-char code[14];
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -173,8 +176,11 @@ int main(void)
   MX_FATFS_Init();
   MX_USART1_UART_Init();
   MX_USART6_UART_Init();
+  MX_TIM3_Init();
   MX_UART5_Init();
   /* USER CODE BEGIN 2 */
+	//MX_GPIO_Init_custom();
+	HAL_GPIO_WritePin(SHIELD_ENABLE_PORT,SHIELD_ENABLE_PIN,GPIO_PIN_SET);
 	strcpy(images[0].filename, "m_scr_v2.bmp");
 	strcpy(images[1].filename, "help.h");//"bg_R.bmp"
 	strcpy(images[2].filename, "settings.h");
@@ -270,6 +276,18 @@ int main(void)
 	
 	err_msg_q = xQueueCreate(1, sizeof(Error));
 	rotationCounter(DISABLE);
+	
+	XDriver.DIR_Port=GPIOC;
+	XDriver.DIR=GPIO_PIN_8;
+	XDriver.STEP_Port=GPIOJ;
+	XDriver.STEP=GPIO_PIN_1;
+	XDriver.Timer=htim3;
+	XDriver.PeriodStep=1;
+	XDriver.StartCounterPeriod=0x456U; //450 Hz
+	XDriver.StopCounterPeriod=0x1F3U;	 //1000 Hz
+	XDriver.DriverDisable=0xFFU; //disable at every stop
+	HR4988_DriverInit(&XDriver);
+	HR4988_StopMotor(&XDriver);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -289,6 +307,7 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
+  /* definition and creation of defaultTask */
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -316,8 +335,8 @@ int main(void)
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
+	HAL_GPIO_WritePin(SHIELD_ENABLE_PORT,SHIELD_ENABLE_PIN,GPIO_PIN_SET);
   osKernelStart();
- 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -733,6 +752,51 @@ static void MX_SDMMC2_SD_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 99;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1110;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
   * @brief UART5 Initialization Function
   * @param None
   * @retval None
@@ -906,14 +970,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
-                          |GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_1, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_7, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOJ, GPIO_PIN_3, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOH, GPIO_PIN_7, GPIO_PIN_RESET);
@@ -921,10 +987,8 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PJ13 PJ4 PJ5 PJ3 
-                           PJ1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_3 
-                          |GPIO_PIN_1;
+  /*Configure GPIO pins : PJ13 PJ4 PJ5 PJ1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -958,12 +1022,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PF7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PF6 PF9 PF8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_9|GPIO_PIN_8;
+  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
@@ -973,12 +1037,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	
+	/*Configure GPIO pin : PF6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PJ3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PH7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
@@ -996,7 +1073,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PJ0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOJ, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB14 PB15 */
@@ -1049,7 +1126,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-
+	HR4988_DriverCallback(htim);
   /* USER CODE END Callback 1 */
 }
 

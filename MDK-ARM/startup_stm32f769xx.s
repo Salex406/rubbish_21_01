@@ -225,19 +225,8 @@ NMI_Handler     PROC
                 ENDP
 HardFault_Handler\
                 PROC
-                EXPORT  HardFault_Handler
-
-                TST     lr, #4          ; Determine correct stack
-                ITE     EQ
-                MRSEQ   R0, MSP         ; Read MSP (Main)
-                MRSNE   R0, PSP         ; Read PSP (Process)
-
-                MOV     R1, R4          ; Registers R4-R6
-                MOV     R2, R5
-                MOV     R3, R6          ;  sourcer32@gmail.com
-
-                EXTERN  hard_fault_handler_c
-                B       hard_fault_handler_c
+                EXPORT  HardFault_Handler			[WEAK]
+                B       .
                 ENDP
 MemManage_Handler\
                 PROC

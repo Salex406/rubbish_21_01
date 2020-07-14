@@ -4,6 +4,7 @@
 #include "stm32f769i_discovery_ts.h"
 #include "stdio.h"
 #include "string.h"
+#include "mechanics.h"
 
 #include "../Components/ft6x06/ft6x06.h"
 
@@ -715,3 +716,64 @@ void DMA2D_LayersAlphaReconfig(uint32_t alpha1, uint32_t alpha2)
 	HAL_DMA2D_ConfigLayer(&hdma2d, 0);
 }
 
+void HandleDebugTouch(uint16_t x, uint16_t y)
+{
+	extern HR4988_DriverTypeDef XDriver;
+	uint8_t shift = 235;
+	uint16_t shift_r = 430;
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	BSP_LCD_SetFont(&Font20);
+	if(x > 200 && x < 280 && y > 0 && y < 60)
+	{
+		//press up
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"press -> up     ", LEFT_MODE, 1);
+		HAL_GPIO_WritePin(PDOWN_PORT,PDOWN_Pin,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PUP_PORT,PUP_Pin,GPIO_PIN_RESET);
+	}
+	else if(x > 200 && x < 280 && y > 100 && y < 160)
+	{
+		//press down
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"press -> down     ", LEFT_MODE, 1);
+		HAL_GPIO_WritePin(PDOWN_PORT,PDOWN_Pin,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PUP_PORT,PUP_Pin,GPIO_PIN_SET);
+	}
+	else if(x > 360 && x < 400 && y > 50 && y < 120)
+	{
+		//press stop
+		HAL_GPIO_WritePin(PDOWN_PORT,PDOWN_Pin,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PUP_PORT,PUP_Pin,GPIO_PIN_SET);
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"press stop      ", LEFT_MODE, 1);
+	}
+	
+	else if(x > 200 && x < 280 && y > 240 && y < 285)
+	{
+		//carriage left
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"carriage -> left", LEFT_MODE, 1);
+		HR4988_RunMotor(&XDriver,CW_DIR);
+	}
+	else if(x > 200 && x < 280 && y > 340 && y < 380)
+	{
+		//carriage right
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"carriage -> right", LEFT_MODE, 1);
+		HR4988_RunMotor(&XDriver,CW_DIR);
+	}
+	else if(x > 360 && x < 400 && y > 270 && y < 320)
+	{
+		//carriage stop
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"carriage stop   ", LEFT_MODE, 1);
+		HR4988_StopMotor(&XDriver );
+	}
+	
+	else if(x > 640 && x < 800 && y > 240 && y < 280)
+	{
+		//stopor up
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"stopor -> up    ", LEFT_MODE, 1);
+		HAL_GPIO_WritePin(STOPOR_PORT,STOPOR_Pin,GPIO_PIN_SET);
+	}
+	else if(x > 640 && x < 800 && y > 325 && y < 380)
+	{
+		//stopor down
+		BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 40, (uint8_t*)"stopor -> down  ", LEFT_MODE, 1);
+		HAL_GPIO_WritePin(STOPOR_PORT,STOPOR_Pin,GPIO_PIN_RESET);
+	}
+}

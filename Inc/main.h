@@ -32,6 +32,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "..\Drivers\hr4988_lib\hr4988.h"
+
 typedef enum {
     MAIN,      
     SETTINGS,      
@@ -39,7 +41,8 @@ typedef enum {
     HELP,    
     DOOR_OPEN,
 		PRESSING,
-		ERR
+		ERR,
+		SERVICE
 }Screen;
 
 struct Image
@@ -106,12 +109,16 @@ static const uint8_t* StringPlaceRubbishIntoBin	= (uint8_t*)"pOMFRSISF MTROQ C K
 static const uint8_t* StringOrChooseAnotherBin	= (uint8_t*)"iLI C\\BFQISF EQTDOJ BAK";
 static const uint8_t* StringRubbishIsPressing	= (uint8_t*)"mTROQ PQFRRTFSR`,";
 static const uint8_t* StringWait	= (uint8_t*)"pOEOGEISF";
+
+
+
 static const uint8_t* StringError	= (uint8_t*)"oYIBKA!";
 static const uint8_t* StringPressOverload	= (uint8_t*)"pFQFDQTHKA PQFRRA";
 static const uint8_t* StringPressTimeout	= (uint8_t*)"sAJMATS PQFRRA";
 static const uint8_t* StringPressUpTimeout	= (uint8_t*)"sAJMATS POEN`SI` PQFRRA";
 static const uint8_t* StringBarcodeNotFound	= (uint8_t*)"ySQIVKOE NF NAJEFN";
 
+static const uint8_t DebugMessages = 1;
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

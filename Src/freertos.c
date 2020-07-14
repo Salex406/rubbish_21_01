@@ -124,8 +124,9 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 /* USER CODE BEGIN Application */
 
 void StartBlinkTask(void const * argument)
-{	
-	char code[20];
+{	extern HR4988_DriverTypeDef XDriver;
+	
+	HR4988_RunMotor(&XDriver,CW_DIR);
   for(;;)
   {
 		HAL_GPIO_TogglePin(GPIOJ,GPIO_PIN_5);
@@ -471,6 +472,66 @@ void ScreensDrawer(void const * argument)
 				BSP_LCD_DisplayStringAt(20, 60+DistanceBetweenStrings48, (uint8_t*)StringWait, LEFT_MODE,0);
 				xTaskNotifyGive(xPressingTaskH);
 			}
+			else if(msg==SERVICE)
+			{
+				//service screen
+				CurrentScreen = SERVICE;
+				LCD_DrawBitmap(0,0,(uint8_t *)images[0].location);
+				DMA2D_DrawImage((uint32_t)images[4].location, LeftButtonX, TopButtonY, 120, 120);
+				
+				uint8_t str[30];
+				BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+				BSP_LCD_SetFont(&Font20);
+				sprintf((char*)str,"K_K1: %d\n\r",HAL_GPIO_ReadPin(K_K1_PORT, K_K1_Pin));
+				BSP_LCD_DisplayStringAt(10, 10, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_K2: %d\n\r",HAL_GPIO_ReadPin(K_K2_PORT, K_K2_Pin));
+				BSP_LCD_DisplayStringAt(10, 40, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_K3: %d\n\r",HAL_GPIO_ReadPin(K_K3_PORT, K_K3_Pin));
+				BSP_LCD_DisplayStringAt(10, 70, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_K4: %d\n\r",HAL_GPIO_ReadPin(K_K4_PORT, K_K4_Pin));
+				BSP_LCD_DisplayStringAt(10, 100, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_UP: %d\n\r",HAL_GPIO_ReadPin(K_PUP_PORT, K_PUP_Pin));
+				BSP_LCD_DisplayStringAt(10, 130, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_DN: %d\n\r",HAL_GPIO_ReadPin(K_PDN_PORT, K_PDN_Pin));
+				BSP_LCD_DisplayStringAt(10, 160, (uint8_t*)str, LEFT_MODE, 1);
+				sprintf((char*)str,"K_DOOR: %d\n\r",HAL_GPIO_ReadPin(DOOR_PORT, DOOR_Pin));
+				BSP_LCD_DisplayStringAt(10, 190, (uint8_t*)str, LEFT_MODE, 1);
+				
+				uint8_t shift = 235;
+				uint16_t shift_r = 430;
+				BSP_LCD_DisplayStringAt(240, 70, (uint8_t*)"PRESS", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(240, 70 + shift, (uint8_t*)"CARRIAGE", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(240+shift_r, 70 + shift, (uint8_t*)"STOPOR", LEFT_MODE, 0);
+				
+				
+				BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+				BSP_LCD_FillRect(700,10,70,60); //refresh
+				
+				BSP_LCD_FillRect(200,10,110,60);
+				BSP_LCD_FillRect(340,40,110,60);
+				BSP_LCD_FillRect(200,100,110,60);
+				
+				BSP_LCD_FillRect(200,10+shift,110,60);
+				BSP_LCD_FillRect(340,40+shift,110,60);
+				BSP_LCD_FillRect(200,100+shift,110,60);
+				
+				BSP_LCD_FillRect(200+shift_r,10+shift,110,60);
+				BSP_LCD_FillRect(200+shift_r,100+shift,110,60);
+				BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+				BSP_LCD_SetFont(&Font20);
+				BSP_LCD_DisplayStringAt(710, 10, (uint8_t*)"REFRESH", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(250, 35, (uint8_t*)"UP", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(250, 100, (uint8_t*)"DOWN", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(340, 40, (uint8_t*)"STOP", LEFT_MODE, 0);
+				
+				BSP_LCD_DisplayStringAt(250, 35+shift, (uint8_t*)"LEFT", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(250, 100+shift, (uint8_t*)"RIGHT", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(340, 40+shift, (uint8_t*)"STOP", LEFT_MODE, 0);
+				
+				BSP_LCD_DisplayStringAt(250+shift_r, 35+shift, (uint8_t*)"UP", LEFT_MODE, 0);
+				BSP_LCD_DisplayStringAt(250+shift_r, 100+shift, (uint8_t*)"DOWN", LEFT_MODE, 0);
+				osDelay(10);
+			}
 			else if(msg==ERR)
 			{
 				//error screen
@@ -561,16 +622,15 @@ void StartTouchTask(void const * argument)
 						if(x > 700 && y > 320 && x <= 800 && y <= 480)
 						{
 								//right bottom button
-								sprintf((char*)lcd_string, "right bottom");
-								BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
-								screenToLoad = HELP;
+								if(DebugMessages == 1){BSP_LCD_SetFont(&Font12); BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, (uint8_t*)"right top", LEFT_MODE, 1);}
+								//screenToLoad = HELP;
+								screenToLoad = SERVICE;
 								xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}
 						else if(x < 115 && y > 320 && y <=480)
 						{
 								//left bottom button
-								sprintf((char*)lcd_string, "left bottom");
-								BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, lcd_string, LEFT_MODE, 1);
+								if(DebugMessages == 1){BSP_LCD_SetFont(&Font12); BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, (uint8_t*)"left bottom", LEFT_MODE, 1);}
 								screenToLoad = SETTINGS;
 								xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}
@@ -592,6 +652,23 @@ void StartTouchTask(void const * argument)
 							screenToLoad = MAIN;
 							xQueueSend(gui_msg_q, &screenToLoad, 0);
 						}
+						break;
+					case SERVICE:
+						if(x > 0 && x < 115 && y > 0 && y < 115)
+						{
+							//left top button
+							if(DebugMessages == 1){BSP_LCD_SetFont(&Font12); BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, (uint8_t*)"left top", LEFT_MODE, 1);}
+							screenToLoad = MAIN;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						else if(x > 700 && y < 115)
+						{
+							//right top button
+							if(DebugMessages == 1){BSP_LCD_SetFont(&Font12); BSP_LCD_DisplayStringAt(0, BSP_LCD_GetYSize() - 45, (uint8_t*)"right top", LEFT_MODE, 1);}
+							screenToLoad = SERVICE;
+							xQueueSend(gui_msg_q, &screenToLoad, 0);
+						}
+						else HandleDebugTouch(x, y);
 						break;
 					case ERR:
 						if(x > 0 && x < 115 && y > 0 && y < 115)

@@ -19,6 +19,7 @@
 "rubbish\stm32f7xx_it.o"
 "rubbish\stm32f7xx_hal_msp.o"
 "rubbish\stm32f7xx_hal_timebase_tim.o"
+"rubbish\hr4988.o"
 "rubbish\system_stm32f7xx.o"
 "rubbish\stm32f7xx_hal_adc.o"
 "rubbish\stm32f7xx_hal_adc_ex.o"

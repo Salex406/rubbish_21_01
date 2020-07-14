@@ -93,6 +93,7 @@ volatile uint32_t psr;/* Program status register. */
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart5;
 extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim1;
@@ -121,7 +122,7 @@ void NMI_Handler(void)
 /**
   * @brief This function handles Hard fault interrupt.
   */
-void hard_fault_handler_c(void)
+void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
@@ -221,9 +222,10 @@ void EXTI0_IRQHandler(void)
 	{
 		//vTaskSuspend(xScanTaskHandle);
 		//rubbish pressing screen
-		ScreenToLoad = PRESSING;
+		ScreenToLoad = MAIN;
 		xQueueSendFromISR(gui_msg_q, &ScreenToLoad, 0);
 		ScanCMD = 0;
+		DoorScreenState = 0;
 	}
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
@@ -258,6 +260,20 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+
+  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /**

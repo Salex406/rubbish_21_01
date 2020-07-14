@@ -46,6 +46,7 @@ rubbish\ff.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h
 rubbish\ff.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h
 rubbish\ff.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h
 rubbish\ff.o: ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
+rubbish\ff.o: ../Inc/..\Drivers\hr4988_lib\hr4988.h
 rubbish\ff.o: ../Inc/bsp_driver_sd.h
 rubbish\ff.o: ../Inc/fatfs_platform.h
 rubbish\ff.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h
